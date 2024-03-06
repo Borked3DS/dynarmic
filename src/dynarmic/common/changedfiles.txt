@@ -4,3 +4,9 @@ precalculate the Lookup Tables (LUTs) at compile time using constexpr and std::a
 memory_pool.cpp and .h:
 std::vector for slabs
 remove std::vector<char*> empty_slabs;
+
+spin_lock_arm64.cpp and spin_lock_x64.cpp:
+ I’ve moved the initialization of the SpinLockImpl to its constructor. 
+ This means that the spin lock is initialized when the SpinLockImpl object is created, 
+ rather than the first time Lock or Unlock is called. 
+ This removes the need for std::call_once and the flag variable
