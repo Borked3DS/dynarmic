@@ -40,8 +40,6 @@ namespace {
 struct SpinLockImpl {
     SpinLockImpl();
 
-    void Initialize();
-
     oaknut::CodeBlock mem;
     oaknut::CodeGenerator code;
 
@@ -49,14 +47,11 @@ struct SpinLockImpl {
     void (*unlock)(volatile int*);
 };
 
-std::once_flag flag;
 SpinLockImpl impl;
 
 SpinLockImpl::SpinLockImpl()
         : mem{4096}
-        , code{mem.ptr(), mem.ptr()} {}
-
-void SpinLockImpl::Initialize() {
+        , code{mem.ptr(), mem.ptr()} {
     mem.unprotect();
 
     lock = code.xptr<void (*)(volatile int*)>();
@@ -74,13 +69,12 @@ void SpinLockImpl::Initialize() {
 }  // namespace
 
 void SpinLock::Lock() {
-    std::call_once(flag, &SpinLockImpl::Initialize, impl);
     impl.lock(&storage);
 }
 
 void SpinLock::Unlock() {
-    std::call_once(flag, &SpinLockImpl::Initialize, impl);
     impl.unlock(&storage);
 }
 
 }  // namespace Dynarmic
+
