@@ -1,2 +1,6 @@
 math_util.cpp:
 precalculate the Lookup Tables (LUTs) at compile time using constexpr and std::array
+
+memory_pool.cpp and .h:
+std::vector for slabs
+remove std::vector<char*> empty_slabs;
