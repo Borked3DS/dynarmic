@@ -1,0 +1,2 @@
+math_util.cpp:
+precalculate the Lookup Tables (LUTs) at compile time using constexpr and std::array
