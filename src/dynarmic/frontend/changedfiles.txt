@@ -1,0 +1,3 @@
+imm.cpp:
+ Some of the values in your switch cases are calculated multiple times.
+ You could calculate these values once and store them in a variable to avoid repeated calculations.
