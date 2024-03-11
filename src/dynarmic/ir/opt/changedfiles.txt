@@ -1,3 +1,9 @@
+a32_constant_memory_reads_pass:
+Currently, the function checks if each instruction’s arguments 
+are all immediates and if the memory at the virtual address is read-only 
+for every opcode case. This check could be moved outside of the switch 
+statement to avoid redundancy.
+
 dead_code_elimination_pass.cpp:
 add a preliminary check to skip the iteration if the block is empty.
 
