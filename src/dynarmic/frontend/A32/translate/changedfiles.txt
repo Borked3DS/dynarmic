@@ -1,0 +1,5 @@
+translate_arm.cpp:
+use of a constant for the instruction size
+The TranslateInstruction function has been added to avoid repeating 
+the same decoding and calling logic in both TranslateArm and 
+TranslateSingleArmInstruction functions.
