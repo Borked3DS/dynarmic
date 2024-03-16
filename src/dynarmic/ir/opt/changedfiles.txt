@@ -9,6 +9,16 @@ a64_callback_config_pass.cpp:
 I’ve added a switch statement to handle different byte sizes in a more efficient manner. This reduces the number of iterations in the while loops, 
 which can improve performance.
 
+constant_propagation_pass.cpp:
+ In bool FoldCommutative(IR::Inst& inst, bool is_32_bit, ImmFn imm_fn):
+ Avoid unnecessary function calls: In the FoldCommutative function, the inst.GetArg(0) and inst.GetArg(1) are called multiple times. You can call them once and store the result in a variable to use later.
+ Reduce condition checks: In the FoldCommutative function, the conditions is_lhs_immediate && !is_rhs_immediate and !is_lhs_immediate && is_rhs_immediate are checked separately. You can merge these two conditions to avoid checking them twice.
+
+ In bool FoldShifts(IR::Inst& inst):
+ Avoid unnecessary function calls: In the FoldShifts function, the inst.GetArg(1) is called twice to get the shift_amount. You can call it once and store the result in a variable to use later.
+ Reduce condition checks: In the FoldShifts function, the condition inst.NumArgs() == 3 && shift_amount.IsImmediate() && !shift_amount.IsZero() is checked after a similar condition inst.NumArgs() == 3 && !carry_inst. 
+ You can merge these two conditions to avoid checking inst.NumArgs() == 3 twice.
+
 dead_code_elimination_pass.cpp:
 add a preliminary check to skip the iteration if the block is empty.
 
