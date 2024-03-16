@@ -1,8 +1,9 @@
 a32_constant_memory_reads_pass:
-Currently, the function checks if each instruction’s arguments 
-are all immediates and if the memory at the virtual address is read-only 
-for every opcode case. This check could be moved outside of the switch 
-statement to avoid redundancy.
+One possible optimization could be to reduce the number of calls to cb->IsReadOnlyMemory(vaddr) and cb->MemoryReadX(vaddr). 
+These function calls could potentially be expensive if they involve system calls or other slow operations.
+We can achieve this by storing the results of these function calls in a cache (a std::unordered_map), and reusing the results for the same vaddr values.
+In this modified version, a cache is used to store the results of cb->IsReadOnlyMemory(vaddr) and cb->MemoryRead64(vaddr) for each vaddr. 
+When the same vaddr is encountered again, the results are retrieved from the cache instead of calling the functions again.
 
 dead_code_elimination_pass.cpp:
 add a preliminary check to skip the iteration if the block is empty.
