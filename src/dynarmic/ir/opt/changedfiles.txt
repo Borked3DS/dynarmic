@@ -5,6 +5,10 @@ We can achieve this by storing the results of these function calls in a cache (a
 In this modified version, a cache is used to store the results of cb->IsReadOnlyMemory(vaddr) and cb->MemoryRead64(vaddr) for each vaddr. 
 When the same vaddr is encountered again, the results are retrieved from the cache instead of calling the functions again.
 
+a64_callback_config_pass.cpp:
+I’ve added a switch statement to handle different byte sizes in a more efficient manner. This reduces the number of iterations in the while loops, 
+which can improve performance.
+
 dead_code_elimination_pass.cpp:
 add a preliminary check to skip the iteration if the block is empty.
 
