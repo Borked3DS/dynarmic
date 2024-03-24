@@ -14,25 +14,23 @@ namespace Dynarmic::Optimization {
 void IdentityRemovalPass(IR::Block& block) {
     std::vector<IR::Inst*> to_invalidate;
 
-    auto iter = block.begin();
-    while (iter != block.end()) {
-        IR::Inst& inst = *iter;
-
+    for (auto& inst : block) {
         const size_t num_args = inst.NumArgs();
-        for (size_t i = 0; i < num_args; i++) {
-            while (true) {
-                IR::Value arg = inst.GetArg(i);
-                if (!arg.IsIdentity())
-                    break;
-                inst.SetArg(i, arg.GetInst()->GetArg(0));
+        std::vector<IR::Value> args(num_args);
+
+        for (size_t i = 0; i < num_args; ++i) {
+            args[i] = inst.GetArg(i);
+            if (args[i].IsIdentity()) {
+                args[i] = args[i].GetInst()->GetArg(0);
             }
         }
 
+        for (size_t i = 0; i < num_args; ++i) {
+            inst.SetArg(i, args[i]);
+        }
+
         if (inst.GetOpcode() == IR::Opcode::Identity || inst.GetOpcode() == IR::Opcode::Void) {
-            iter = block.Instructions().erase(inst);
             to_invalidate.push_back(&inst);
-        } else {
-            ++iter;
         }
     }
 
@@ -42,3 +40,5 @@ void IdentityRemovalPass(IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
+
+
