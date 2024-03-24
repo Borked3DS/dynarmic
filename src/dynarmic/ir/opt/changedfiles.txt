@@ -20,11 +20,24 @@ constant_propagation_pass.cpp:
  You can merge these two conditions to avoid checking inst.NumArgs() == 3 twice.
 
 dead_code_elimination_pass.cpp:
-add a preliminary check to skip the iteration if the block is empty.
+Add a preliminary check to skip the iteration if the block is empty.
 
 identity_removal_pass.cpp:
-we’re storing the arguments of each instruction in a temporary vector. 
+We’re storing the arguments of each instruction in a temporary vector. 
 This reduces the number of times we call GetArg and SetArg
+
+polyfill_pass.cpp:
+In void PolyfillSHA256MessageSchedule0(IR::IREmitter& ir, IR::Inst& inst):
+You’re calling ir.VectorSetElement and ir.VectorGetElement inside a loop. These function calls can be expensive, especially when they’re inside a loop. 
+You can avoid these calls by storing the elements in a temporary array.
+
+In void PolyfillSHA256MessageSchedule1(IR::IREmitter& ir, IR::Inst& inst):
+We’re storing the results of the VectorRotateRight, VectorEor, and VectorAdd operations in temporary variables. 
+This reduces the number of times we call these functions
+
+In void PolyfillPass(IR::Block& block, const PolyfillOptions& polyfill):
+We’re storing the opcode in a temporary variable and setting the insertion point only when necessary. 
+This reduces the number of times we call GetOpcode and SetInsertionPointBefore
 
 verification_pass.cpp:
 Use unordered_map instead of map and reserve space for the unordered_map.
