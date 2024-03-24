@@ -4,7 +4,7 @@
  */
 
 #include <cstdio>
-#include <map>
+#include <unordered_map>
 
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
@@ -29,7 +29,9 @@ void VerificationPass(const IR::Block& block) {
         }
     }
 
-    std::map<IR::Inst*, size_t> actual_uses;
+    std::unordered_map<IR::Inst*, size_t> actual_uses;
+    actual_uses.reserve(block.size());  // Reserve space for the unordered_map
+
     for (const auto& inst : block) {
         for (size_t i = 0; i < inst.NumArgs(); i++) {
             const auto arg = inst.GetArg(i);
@@ -45,3 +47,4 @@ void VerificationPass(const IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
+
