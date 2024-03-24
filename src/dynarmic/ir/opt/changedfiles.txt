@@ -22,3 +22,8 @@ constant_propagation_pass.cpp:
 dead_code_elimination_pass.cpp:
 add a preliminary check to skip the iteration if the block is empty.
 
+identity_removal_pass.cpp:
+we’re storing the arguments of each instruction in a temporary vector. 
+This reduces the number of times we call GetArg and SetArg
+
+
