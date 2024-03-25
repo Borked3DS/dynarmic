@@ -11,10 +11,6 @@
 namespace Dynarmic::Optimization {
 
 void DeadCodeElimination(IR::Block& block) {
-    // Skip if block is empty
-    if (block.empty()) {
-        return;
-    }
 
     // We iterate over the instructions in reverse order.
     // This is because removing an instruction reduces the number of uses for earlier instructions.

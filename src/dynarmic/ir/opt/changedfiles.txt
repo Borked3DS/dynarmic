@@ -19,9 +19,6 @@ constant_propagation_pass.cpp:
  Reduce condition checks: In the FoldShifts function, the condition inst.NumArgs() == 3 && shift_amount.IsImmediate() && !shift_amount.IsZero() is checked after a similar condition inst.NumArgs() == 3 && !carry_inst. 
  You can merge these two conditions to avoid checking inst.NumArgs() == 3 twice.
 
-dead_code_elimination_pass.cpp:
-Add a preliminary check to skip the iteration if the block is empty.
-
 identity_removal_pass.cpp:
 We’re storing the arguments of each instruction in a temporary vector. 
 This reduces the number of times we call GetArg and SetArg
