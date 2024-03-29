@@ -1,0 +1,4 @@
+block_range_information.cpp:
+erase_locations: If you know the approximate number of elements that will be inserted into erase_locations, you can use the reserve function to preallocate memory. 
+This can potentially improve performance by reducing the number of memory reallocations.
+Use emplace Instead of insert: The emplace function constructs the element in-place and can be more efficient than insert, which creates a temporary object.
