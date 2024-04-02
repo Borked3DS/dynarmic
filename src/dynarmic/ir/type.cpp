@@ -11,29 +11,35 @@
 
 namespace Dynarmic::IR {
 
-std::string GetNameOf(Type type) {
-    static constexpr std::array names{
-        "A32Reg", "A32ExtReg",
-        "A64Reg", "A64Vec",
-        "Opaque",
-        "U1", "U8", "U16", "U32", "U64", "U128",
-        "CoprocInfo",
-        "NZCVFlags",
-        "Cond",
-        "Table"};
+static constexpr const char* type_names[] = {
+    "Void",
+    "A32Reg", "A32ExtReg",
+    "A64Reg", "A64Vec",
+    "Opaque",
+    "U1", "U8", "U16", "U32", "U64", "U128",
+    "CoprocInfo",
+    "NZCVFlags",
+    "Cond",
+    "Table"
+};
 
-    const size_t bits = static_cast<size_t>(type);
+static constexpr size_t type_name_count = std::size(type_names);
+
+std::string GetNameOf(Type type) {
+    using UnderlyingType = std::underlying_type_t<Type>;
+    const UnderlyingType bits = static_cast<UnderlyingType>(type);
+
     if (bits == 0) {
-        return "Void";
+        return type_names[0];
     }
 
     std::string result;
-    for (size_t i = 0; i < names.size(); i++) {
-        if ((bits & (size_t(1) << i)) != 0) {
+    for (size_t i = 1; i < type_name_count; i++) {
+        if (bits & (size_t(1) << (i - 1))) {
             if (!result.empty()) {
                 result += '|';
             }
-            result += names[i];
+            result += type_names[i];
         }
     }
     return result;
