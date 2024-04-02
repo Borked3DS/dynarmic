@@ -32,25 +32,23 @@ void A64CallbackConfigPass(IR::Block& block, const A64::UserConfig& conf) {
             IR::U64 addr{inst.GetArg(2)};
             const IR::U128 zero_u128 = ir.ZeroExtendToQuad(ir.Imm64(0));
 
+            // Use SIMD instructions to write 16-byte chunks
+            while (bytes >= 16) {
+                ir.WriteMemory128(addr, zero_u128, IR::AccType::DCZVA);
+                addr = ir.Add(addr, ir.Imm64(16));
+                bytes -= 16;
+            }
+
+            // Write any remaining 8-byte or 4-byte chunks
             while (bytes > 0) {
-                switch (bytes) {
-                    case 16:
-                        ir.WriteMemory128(addr, zero_u128, IR::AccType::DCZVA);
-                        addr = ir.Add(addr, ir.Imm64(16));
-                        bytes -= 16;
-                        break;
-                    case 8:
-                        ir.WriteMemory64(addr, ir.Imm64(0), IR::AccType::DCZVA);
-                        addr = ir.Add(addr, ir.Imm64(8));
-                        bytes -= 8;
-                        break;
-                    case 4:
-                        ir.WriteMemory32(addr, ir.Imm32(0), IR::AccType::DCZVA);
-                        addr = ir.Add(addr, ir.Imm64(4));
-                        bytes -= 4;
-                        break;
-                    default:
-                        break;
+                if (bytes >= 8) {
+                    ir.WriteMemory64(addr, ir.Imm64(0), IR::AccType::DCZVA);
+                    addr = ir.Add(addr, ir.Imm64(8));
+                    bytes -= 8;
+                } else {
+                    ir.WriteMemory32(addr, ir.Imm32(0), IR::AccType::DCZVA);
+                    addr = ir.Add(addr, ir.Imm64(4));
+                    bytes -= 4;
                 }
             }
         }

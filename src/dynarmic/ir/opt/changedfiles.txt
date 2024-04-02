@@ -4,8 +4,7 @@ These function calls could potentially be expensive if they involve system calls
 The cache lookup is performed by calculating the index into the cache array using the low bits of the memory address.
 
 a64_callback_config_pass.cpp:
-I’ve added a switch statement to handle different byte sizes in a more efficient manner. This reduces the number of iterations in the while loops, 
-which can improve performance.
+Avoid switch and use simd instructions.
 
 constant_propagation_pass.cpp:
  In bool FoldCommutative(IR::Inst& inst, bool is_32_bit, ImmFn imm_fn):
