@@ -15,40 +15,38 @@
 namespace Dynarmic::Optimization {
 
 void A64MergeInterpretBlocksPass(IR::Block& block, A64::UserCallbacks* cb) {
-    const auto is_interpret_instruction = [cb](A64::LocationDescriptor location) {
-        const auto instruction = cb->MemoryReadCode(location.PC());
-        if (!instruction)
-            return false;
+    IR::Terminal terminal = block.GetTerminal();
+    if (auto term = boost::get<IR::Term::Interpret>(&terminal)) {
+        A64::LocationDescriptor location{term->next};
+        size_t num_instructions = 1;
 
-        IR::Block new_block{location};
-        A64::TranslateSingleInstruction(new_block, location, *instruction);
+        while (true) {
+            std::optional<u32> instruction_opt = cb->MemoryReadCode(location.PC());
+            if (!instruction_opt.has_value())
+                break;
 
-        if (!new_block.Instructions().empty())
-            return false;
+            const u32 instruction = instruction_opt.value();
+            IR::Block new_block{location};
+            A64::TranslateSingleInstruction(new_block, location, instruction);
 
-        const IR::Terminal terminal = new_block.GetTerminal();
-        if (auto term = boost::get<IR::Term::Interpret>(&terminal)) {
-            return term->next == location;
+            if (!new_block.Instructions().empty())
+                break;
+
+            IR::Terminal new_terminal = new_block.GetTerminal();
+            if (auto new_term = boost::get<IR::Term::Interpret>(&new_terminal)) {
+                if (new_term->next != location.AdvancePC(static_cast<int>(num_instructions * 4)))
+                    break;
+                num_instructions++;
+                location = A64::LocationDescriptor{new_term->next};
+            } else {
+                break;
+            }
         }
 
-        return false;
-    };
-
-    IR::Terminal terminal = block.GetTerminal();
-    auto term = boost::get<IR::Term::Interpret>(&terminal);
-    if (!term)
-        return;
-
-    A64::LocationDescriptor location{term->next};
-    size_t num_instructions = 1;
-
-    while (is_interpret_instruction(location.AdvancePC(static_cast<int>(num_instructions * 4)))) {
-        num_instructions++;
+        term->num_instructions = num_instructions;
+        block.ReplaceTerminal(terminal);
+        block.CycleCount() += num_instructions - 1;
     }
-
-    term->num_instructions = num_instructions;
-    block.ReplaceTerminal(terminal);
-    block.CycleCount() += num_instructions - 1;
 }
 
 }  // namespace Dynarmic::Optimization
