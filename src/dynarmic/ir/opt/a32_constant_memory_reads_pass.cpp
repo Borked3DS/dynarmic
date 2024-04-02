@@ -7,12 +7,13 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/opt/passes.h"
-#include <unordered_map>
 
 namespace Dynarmic::Optimization {
 
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
-    std::unordered_map<u32, std::pair<bool, u64>> cache;
+    constexpr size_t kCacheSize = 1024;
+    std::pair<bool, u64> cache[kCacheSize] = {};
+    bool cache_valid[kCacheSize] = {};
 
     for (auto& inst : block) {
         switch (inst.GetOpcode()) {
@@ -25,16 +26,15 @@ void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
             }
 
             const u32 vaddr = inst.GetArg(1).GetU32();
+            const size_t index = vaddr % kCacheSize;
 
-            auto it = cache.find(vaddr);
-            if (it == cache.end()) {
+            if (cache_valid[index] && cache[index].first) {
+                inst.ReplaceUsesWith(IR::Value{cache[index].second});
+            } else {
                 bool is_read_only = cb->IsReadOnlyMemory(vaddr);
                 u64 value_from_memory = is_read_only ? cb->MemoryRead64(vaddr) : 0;
-                it = cache.emplace(vaddr, std::make_pair(is_read_only, value_from_memory)).first;
-            }
-
-            if (it->second.first) {
-                inst.ReplaceUsesWith(IR::Value{it->second.second});
+                cache[index] = std::make_pair(is_read_only, value_from_memory);
+                cache_valid[index] = true;
             }
             break;
         }
