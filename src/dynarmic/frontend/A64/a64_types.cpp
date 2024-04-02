@@ -6,28 +6,35 @@
 #include "dynarmic/frontend/A64/a64_types.h"
 
 #include <array>
-#include <ostream>
-
-#include <fmt/format.h>
+#include <string>
 
 namespace Dynarmic::A64 {
-
-const char* CondToString(Cond cond) {
-    static constexpr std::array cond_strs = {
+    static constexpr std::array<const char*, 16> cond_strs = {
         "eq", "ne", "hs", "lo", "mi", "pl", "vs", "vc",
-        "hi", "ls", "ge", "lt", "gt", "le", "al", "nv"};
-    return cond_strs.at(static_cast<size_t>(cond));
-}
+        "hi", "ls", "ge", "lt", "gt", "le", "al", "nv"
+    };
 
-std::string RegToString(Reg reg) {
-    if (reg == Reg::R31) {
-        return "sp|zr";
+    const char* CondToString(Cond cond) {
+        return cond_strs[static_cast<size_t>(cond)];
     }
-    return fmt::format("r{}", static_cast<size_t>(reg));
-}
 
-std::string VecToString(Vec vec) {
-    return fmt::format("v{}", static_cast<size_t>(vec));
-}
+    std::string RegToString(Reg reg) {
+        if (reg == Reg::R31) {
+            return "sp|zr";
+        }
 
+        std::string result;
+        result.reserve(3);  // Estimated maximum size of the string
+        result += 'r';
+        result += static_cast<char>(static_cast<size_t>(reg) + '0');
+        return result;
+    }
+
+    std::string VecToString(Vec vec) {
+        std::string result;
+        result.reserve(3);  // Estimated maximum size of the string
+        result += 'v';
+        result += static_cast<char>(static_cast<size_t>(vec) + '0');
+        return result;
+    }
 }  // namespace Dynarmic::A64
