@@ -20,6 +20,11 @@ identity_removal_pass.cpp:
 We’re storing the arguments of each instruction in a temporary vector. 
 This reduces the number of times we call GetArg and SetArg
 
+a64_merge_interpret_blocks:
+Applying targeted optimizations, like inlining the is_interpret_instruction function and reducing memory read operations.
+Leveraging the available SIMD instructions (NEON or SSE) to perform memory writes more efficiently.
+Handling the type conversions between the IR::LocationDescriptor and A64::LocationDescriptor to ensure the code works correctly.
+
 polyfill_pass.cpp:
 In void PolyfillSHA256MessageSchedule0(IR::IREmitter& ir, IR::Inst& inst):
 You’re calling ir.VectorSetElement and ir.VectorGetElement inside a loop. These function calls can be expensive, especially when they’re inside a loop. 
