@@ -20,7 +20,7 @@ std::string ToString(const LocationDescriptor& descriptor) {
     static constexpr char kStepFlag[] = ",step";
 
     std::string result;
-    result.reserve(64);  // Preallocate some space to avoid reallocations
+    result.reserve(32);  // Preallocate some space to avoid reallocations
 
     result += kOpenBrace;
     result += std::to_string(descriptor.PC());
