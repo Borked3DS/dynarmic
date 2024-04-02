@@ -6,7 +6,7 @@
 #include "dynarmic/frontend/A32/a32_types.h"
 
 #include <array>
-#include <ostream>
+#include "custom_ostream.h"
 
 #include <mcl/bit/bit_field.hpp>
 
