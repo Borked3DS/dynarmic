@@ -6,7 +6,6 @@
 #pragma once
 
 #include <functional>
-#include "custom_ostream.h"
 #include <format>
 #include <tuple>
 
