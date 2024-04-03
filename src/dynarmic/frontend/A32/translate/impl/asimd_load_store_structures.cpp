@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <optional>
-#include <tuple>
-
 #include <mcl/bit/bit_field.hpp>
 
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
@@ -14,62 +11,74 @@ namespace Dynarmic::A32 {
 
 namespace {
 
-std::optional<std::tuple<size_t, size_t, size_t>> DecodeType(Imm<4> type, size_t size, size_t align) {
+struct DecodeResult {
+    bool is_valid;
+    size_t count;
+    size_t size;
+    size_t alignment;
+
+    explicit operator bool() const {
+        return is_valid;
+    }
+};
+
+DecodeResult DecodeType(Imm<4> type, size_t size, size_t align) {
     switch (type.ZeroExtend()) {
     case 0b0111:  // VST1 A1 / VLD1 A1
         if (mcl::bit::get_bit<1>(align)) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{1, 1, 0};
+        return {true, 1, 1, 0};
     case 0b1010:  // VST1 A2 / VLD1 A2
         if (align == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{1, 2, 0};
+        return {true, 1, 2, 0};
     case 0b0110:  // VST1 A3 / VLD1 A3
         if (mcl::bit::get_bit<1>(align)) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{1, 3, 0};
+        return {true, 1, 3, 0};
     case 0b0010:  // VST1 A4 / VLD1 A4
-        return std::tuple<size_t, size_t, size_t>{1, 4, 0};
+        return {true, 1, 4, 0};
     case 0b1000:  // VST2 A1 / VLD2 A1
         if (size == 0b11 || align == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{2, 1, 1};
+        return {true, 2, 1, 1};
     case 0b1001:  // VST2 A1 / VLD2 A1
         if (size == 0b11 || align == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{2, 1, 2};
+        return {true, 2, 1, 2};
     case 0b0011:  // VST2 A2 / VLD2 A2
         if (size == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{2, 2, 2};
+        return {true, 2, 2, 2};
     case 0b0100:  // VST3 / VLD3
         if (size == 0b11 || mcl::bit::get_bit<1>(align)) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{3, 1, 1};
+        return {true, 3, 1, 1};
     case 0b0101:  // VST3 / VLD3
         if (size == 0b11 || mcl::bit::get_bit<1>(align)) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{3, 1, 2};
+        return {true, 3, 1, 2};
     case 0b0000:  // VST4 / VLD4
         if (size == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{4, 1, 1};
+        return {true, 4, 1, 1};
     case 0b0001:  // VST4 / VLD4
         if (size == 0b11) {
-            return std::nullopt;
+            return {false, 0, 0, 0};
         }
-        return std::tuple<size_t, size_t, size_t>{4, 1, 2};
+        return {true, 4, 1, 2};
     }
     ASSERT_FALSE("Decode error");
+    return {false, 0, 0, 0};
 }
 }  // namespace
 
@@ -82,7 +91,10 @@ bool TranslatorVisitor::v8_VST_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
     if (!decoded_type) {
         return UndefinedInstruction();
     }
-    const auto [nelem, regs, inc] = *decoded_type;
+
+    const size_t nelem = decoded_type.count;
+    const size_t regs = decoded_type.size;
+    const size_t inc = decoded_type.alignment;
 
     const ExtReg d = ToExtRegD(Vd, D);
     const size_t d_last = RegNumber(d) + inc * (nelem - 1);
@@ -131,7 +143,10 @@ bool TranslatorVisitor::v8_VLD_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
     if (!decoded_type) {
         return UndefinedInstruction();
     }
-    const auto [nelem, regs, inc] = *decoded_type;
+
+    const size_t nelem = decoded_type.count;
+    const size_t regs = decoded_type.size;
+    const size_t inc = decoded_type.alignment;
 
     const ExtReg d = ToExtRegD(Vd, D);
     const size_t d_last = RegNumber(d) + inc * (nelem - 1);
