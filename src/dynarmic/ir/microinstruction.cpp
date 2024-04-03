@@ -5,8 +5,6 @@
 
 #include "dynarmic/ir/microinstruction.h"
 
-#include <algorithm>
-
 #include <mcl/assert.hpp>
 
 #include "dynarmic/ir/opcodes.h"
@@ -602,7 +600,12 @@ bool Inst::MayGetNZCVFromOp() const {
 }
 
 bool Inst::AreAllArgsImmediates() const {
-    return std::all_of(args.begin(), args.begin() + NumArgs(), [](const auto& value) { return value.IsImmediate(); });
+    for (size_t i = 0; i < NumArgs(); ++i) {
+        if (!args[i].IsImmediate()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Inst::HasAssociatedPseudoOperation() const {
