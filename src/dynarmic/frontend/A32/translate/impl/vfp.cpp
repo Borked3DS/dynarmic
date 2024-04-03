@@ -18,7 +18,7 @@ bool TranslatorVisitor::EmitVfpVectorOperation(bool sz, ExtReg d, ExtReg n, ExtR
     // VFP register banks are 8 single-precision registers in size.
     const size_t register_bank_size = sz ? 4 : 8;
     size_t vector_length = ir.current_location.FPSCR().Len();
-    const size_t vector_stride = *ir.current_location.FPSCR().Stride();
+    const size_t vector_stride = ir.current_location.FPSCR().Stride().value_or(1);
 
     // Unpredictable case
     if (vector_stride * vector_length > register_bank_size) {
