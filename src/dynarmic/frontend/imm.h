@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <type_traits>
-
 #include <mcl/assert.hpp>
 #include <mcl/bit/bit_field.hpp>
 #include <mcl/bitsizeof.hpp>
