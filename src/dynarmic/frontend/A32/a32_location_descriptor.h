@@ -6,10 +6,10 @@
 #pragma once
 
 #include <functional>
-#include <string>
+#include "custom_ostream.h"
+#include <format>
 #include <tuple>
 
-#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 #include "dynarmic/frontend/A32/FPSCR.h"
@@ -151,12 +151,12 @@ struct hash<Dynarmic::A32::LocationDescriptor> {
         return std::hash<u64>()(x.UniqueHash());
     }
 };
-}  // namespace std
 
-template<>
-struct fmt::formatter<Dynarmic::A32::LocationDescriptor> : fmt::formatter<std::string> {
-    template<typename FormatContext>
-    auto format(Dynarmic::A32::LocationDescriptor descriptor, FormatContext& ctx) const {
-        return formatter<std::string>::format(Dynarmic::A32::ToString(descriptor), ctx);
-    }
+template <>
+    struct formatter<Dynarmic::A32::LocationDescriptor> : formatter<std::string> {
+        template <typename FormatContext>
+        auto format(const Dynarmic::A32::LocationDescriptor& descriptor, FormatContext& ctx) {
+            return formatter<std::string>::format(Dynarmic::A32::ToString(descriptor), ctx);
+        }
 };
+}  // namespace std

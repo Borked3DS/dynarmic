@@ -2,27 +2,9 @@
 #define CUSTOM_OSTREAM_H
 
 #include <string>
+#include <cstring>
 
 namespace Dynarmic::A32 {
-
-size_t strlen(const char* str) {
-    const char* start = str;
-
-    // Unroll the loop for the first few iterations
-    for (int i = 0; i < 16; ++i) {
-        if (*str == '\0') {
-            return static_cast<size_t>(str - start);
-        }
-        ++str;
-    }
-
-    // Use a simple loop for the rest of the string
-    while (*str != '\0') {
-        ++str;
-    }
-    return static_cast<size_t>(str - start);
-}
-
 class ostream {
 public:
     using OutputFunction = void (*)(const char*, size_t);
