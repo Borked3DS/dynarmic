@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <functional>
 #include <format>
 
 #include <mcl/stdint.hpp>
