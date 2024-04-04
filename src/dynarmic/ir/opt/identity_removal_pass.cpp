@@ -18,7 +18,7 @@ void IdentityRemovalPass(IR::Block& block) {
 
     for (auto& inst : block) {
         const size_t num_args = inst.NumArgs();
-        std::array<IR::Value, 8> args; // Assuming a maximum of 8 arguments per instruction
+        std::array<IR::Value, 2> args; // Assuming a maximum of 2 arguments per instruction
         size_t args_count = 0;
 
         for (size_t i = 0; i < num_args; ++i) {
