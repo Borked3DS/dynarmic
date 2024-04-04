@@ -16,7 +16,7 @@ namespace OpcodeInfo {
 struct Meta {
     const char* name;
     Type type;
-    std::array<Type, 8> arg_types; // Assuming a maximum of 8 arguments
+    std::array<Type, 4> arg_types; // Assuming a maximum of 8 arguments
     size_t num_args;
 };
 
@@ -38,7 +38,7 @@ constexpr Type Cond = Type::Cond;
 constexpr Type Table = Type::Table;
 constexpr Type AccType = Type::AccType;
 
-static const std::array<Meta, 32> opcode_info = {
+static const std::array<Meta, 4> opcode_info = {
     // Manually initialize the opcode_info array
     {
         {"AddWithCarry", Type::U32, {Type::U32, Type::U32, Type::U1}, 3},
