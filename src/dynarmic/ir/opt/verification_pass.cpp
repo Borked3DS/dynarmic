@@ -4,7 +4,7 @@
  */
 
 #include <cstdio>
-#include <unordered_map>
+#include <array>
 
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
@@ -29,20 +29,20 @@ void VerificationPass(const IR::Block& block) {
         }
     }
 
-    std::unordered_map<IR::Inst*, size_t> actual_uses;
-    actual_uses.reserve(block.size());  // Reserve space for the unordered_map
+    constexpr size_t max_instructions = 128;
+    std::array<size_t, max_instructions> actual_uses = {};
 
     for (const auto& inst : block) {
         for (size_t i = 0; i < inst.NumArgs(); i++) {
             const auto arg = inst.GetArg(i);
             if (!arg.IsImmediate()) {
-                actual_uses[arg.GetInst()]++;
+                actual_uses[reinterpret_cast<size_t>(arg.GetInst())]++;
             }
         }
     }
 
-    for (const auto& pair : actual_uses) {
-        ASSERT(pair.first->UseCount() == pair.second);
+    for (const auto& inst : block) {
+        ASSERT(inst.UseCount() == actual_uses[reinterpret_cast<size_t>(&inst)]);
     }
 }
 
