@@ -21,9 +21,24 @@ struct Meta {
 };
 
 constexpr Type Void = Type::Void;
-// ... (other type definitions)
+constexpr Type A32Reg = Type::A32Reg;
+constexpr Type A32ExtReg = Type::A32ExtReg;
+constexpr Type A64Reg = Type::A64Reg;
+constexpr Type A64Vec = Type::A64Vec;
+constexpr Type Opaque = Type::Opaque;
+constexpr Type U1 = Type::U1;
+constexpr Type U8 = Type::U8;
+constexpr Type U16 = Type::U16;
+constexpr Type U32 = Type::U32;
+constexpr Type U64 = Type::U64;
+constexpr Type U128 = Type::U128;
+constexpr Type CoprocInfo = Type::CoprocInfo;
+constexpr Type NZCV = Type::NZCVFlags;
+constexpr Type Cond = Type::Cond;
+constexpr Type Table = Type::Table;
+constexpr Type AccType = Type::AccType;
 
-static const std::array<Meta, 256> opcode_info = {
+static const std::array<Meta, 32> opcode_info = {
     // Manually initialize the opcode_info array
     {
         {"AddWithCarry", Type::U32, {Type::U32, Type::U32, Type::U1}, 3},
