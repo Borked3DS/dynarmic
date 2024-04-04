@@ -16,7 +16,7 @@ namespace OpcodeInfo {
 struct Meta {
     const char* name;
     Type type;
-    std::array<Type, 4> arg_types; // Assuming a maximum of 8 arguments
+    std::array<Type, 4> arg_types; // Assuming a maximum of 4 arguments
     size_t num_args;
 };
 
