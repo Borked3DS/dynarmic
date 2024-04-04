@@ -10,7 +10,7 @@
 
 namespace Dynarmic::IR {
 
-static constexpr const char* type_names[] = {
+static constexpr const char* type_names[16] = {
     "Void",
     "A32Reg", "A32ExtReg",
     "A64Reg", "A64Vec",
