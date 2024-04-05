@@ -6,9 +6,8 @@
 #include "dynarmic/backend/x64/a32_jitstate.h"
 
 #include <mcl/assert.hpp>
-#include <mcl/bit/bit_field.hpp>
 #include <mcl/stdint.hpp>
-
+#include <emmintrin.h>
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
@@ -51,48 +50,82 @@ u32 A32JitState::Cpsr() const {
     DEBUG_ASSERT((cpsr_q & ~1) == 0);
     DEBUG_ASSERT((cpsr_jaifm & ~0x010001DF) == 0);
 
-    u32 cpsr = 0;
+    // Use SIMD instructions on x64
+    __m128i vCPSR = _mm_set_epi32(0, 0, 0, 0);
 
     // NZCV flags
-    cpsr |= NZCV::FromX64(cpsr_nzcv);
-    // Q flag
-    cpsr |= cpsr_q ? 1 << 27 : 0;
-    // GE flags
-    cpsr |= mcl::bit::get_bit<31>(cpsr_ge) ? 1 << 19 : 0;
-    cpsr |= mcl::bit::get_bit<23>(cpsr_ge) ? 1 << 18 : 0;
-    cpsr |= mcl::bit::get_bit<15>(cpsr_ge) ? 1 << 17 : 0;
-    cpsr |= mcl::bit::get_bit<7>(cpsr_ge) ? 1 << 16 : 0;
-    // E flag, T flag
-    cpsr |= mcl::bit::get_bit<1>(upper_location_descriptor) ? 1 << 9 : 0;
-    cpsr |= mcl::bit::get_bit<0>(upper_location_descriptor) ? 1 << 5 : 0;
-    // IT state
-    cpsr |= static_cast<u32>(upper_location_descriptor & 0b11111100'00000000);
-    cpsr |= static_cast<u32>(upper_location_descriptor & 0b00000011'00000000) << 17;
-    // Other flags
-    cpsr |= cpsr_jaifm;
+    vCPSR = _mm_or_si128(vCPSR, _mm_set_epi32(0, 0, 0, NZCV::FromX64(cpsr_nzcv)));
 
-    return cpsr;
+    // Q flag
+    __m128i vQFlag = _mm_and_si128(_mm_set_epi32(0, 0, 0, cpsr_q), _mm_set1_epi32(1 << 27));
+    vCPSR = _mm_or_si128(vCPSR, vQFlag);
+
+    // GE flags
+    __m128i vGEFlags = _mm_set_epi32(
+        (cpsr_ge >> 31) & 1 ? 1 << 19 : 0,
+        (cpsr_ge >> 23) & 1 ? 1 << 18 : 0,
+        (cpsr_ge >> 15) & 1 ? 1 << 17 : 0,
+        (cpsr_ge >> 7) & 1 ? 1 << 16 : 0
+    );
+    vCPSR = _mm_or_si128(vCPSR, vGEFlags);
+
+    // E flag, T flag
+    __m128i vETFlags = _mm_set_epi32(
+        0,
+        0,
+        (upper_location_descriptor >> 1) & 1 ? 1 << 9 : 0,
+        (upper_location_descriptor >> 0) & 1 ? 1 << 5 : 0
+    );
+    vCPSR = _mm_or_si128(vCPSR, vETFlags);
+
+    // IT state
+    __m128i vITState = _mm_set_epi32(
+        0,
+        static_cast<u32>(upper_location_descriptor & 0b00000011'00000000) << 17,
+        static_cast<u32>(upper_location_descriptor & 0b11111100'00000000),
+        0
+    );
+    vCPSR = _mm_or_si128(vCPSR, vITState);
+
+    // Other flags
+    vCPSR = _mm_or_si128(vCPSR, _mm_set_epi32(0, 0, 0, cpsr_jaifm));
+
+    return _mm_cvtsi128_si32(vCPSR);
+    
 }
 
 void A32JitState::SetCpsr(u32 cpsr) {
+
+    // Use SIMD instructions on x64
+    __m128i vCPSR = _mm_set_epi32(0, 0, 0, cpsr);
+
     // NZCV flags
     cpsr_nzcv = NZCV::ToX64(cpsr);
+
     // Q flag
-    cpsr_q = mcl::bit::get_bit<27>(cpsr) ? 1 : 0;
+    __m128i vQFlag = _mm_and_si128(_mm_srli_epi32(vCPSR, 27), _mm_set1_epi32(1));
+    cpsr_q = _mm_cvtsi128_si32(vQFlag);
+
     // GE flags
-    cpsr_ge = 0;
-    cpsr_ge |= mcl::bit::get_bit<19>(cpsr) ? 0xFF000000 : 0;
-    cpsr_ge |= mcl::bit::get_bit<18>(cpsr) ? 0x00FF0000 : 0;
-    cpsr_ge |= mcl::bit::get_bit<17>(cpsr) ? 0x0000FF00 : 0;
-    cpsr_ge |= mcl::bit::get_bit<16>(cpsr) ? 0x000000FF : 0;
+    __m128i vGEFlags = _mm_or_si128(
+        _mm_or_si128(
+            _mm_or_si128(
+                _mm_and_si128(_mm_srli_epi32(vCPSR, 16), _mm_set1_epi32(0xFF)),
+                _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 17), _mm_set1_epi32(0xFF)), 8)
+            ),
+            _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 18), _mm_set1_epi32(0xFF)), 16)
+        ),
+        _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 19), _mm_set1_epi32(0xFF)), 24)
+    );
+    cpsr_ge = _mm_cvtsi128_si32(vGEFlags);
 
     upper_location_descriptor &= 0xFFFF0000;
     // E flag, T flag
-    upper_location_descriptor |= mcl::bit::get_bit<9>(cpsr) ? 2 : 0;
-    upper_location_descriptor |= mcl::bit::get_bit<5>(cpsr) ? 1 : 0;
+    upper_location_descriptor |= _mm_cvtsi128_si32(_mm_and_si128(_mm_srli_epi32(vCPSR, 5), _mm_set1_epi32(1)));
+    upper_location_descriptor |= _mm_cvtsi128_si32(_mm_and_si128(_mm_srli_epi32(vCPSR, 9), _mm_set1_epi32(2)));
     // IT state
-    upper_location_descriptor |= (cpsr >> 0) & 0b11111100'00000000;
-    upper_location_descriptor |= (cpsr >> 17) & 0b00000011'00000000;
+    upper_location_descriptor |= _mm_cvtsi128_si32(_mm_and_si128(vCPSR, _mm_set1_epi32(0b11111100'00000000)));
+    upper_location_descriptor |= _mm_cvtsi128_si32(_mm_and_si128(_mm_slli_epi32(_mm_and_si128(vCPSR, _mm_set1_epi32(0b00000011'00000000)), 17), _mm_set1_epi32(0xFF00)));
 
     // Other flags
     cpsr_jaifm = cpsr & 0x010001DF;
@@ -170,8 +203,14 @@ u32 A32JitState::Fpscr() const {
     const u32 mxcsr = guest_MXCSR | asimd_MXCSR;
 
     u32 FPSCR = fpcr_mode | fpsr_nzcv;
-    FPSCR |= (mxcsr & 0b0000000000001);       // IOC = IE
-    FPSCR |= (mxcsr & 0b0000000111100) >> 1;  // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
+
+    // Use SIMD instructions on x64
+    __m128i vMXCSR = _mm_set_epi32(0, 0, 0, mxcsr);
+    __m128i vIOC = _mm_and_si128(_mm_set1_epi32(0b0000000000001), vMXCSR);
+    __m128i vIXCUFCOFCDZC = _mm_and_si128(_mm_set1_epi32(0b0000000111100), vMXCSR);
+    FPSCR |= _mm_cvtsi128_si32(vIOC);
+    FPSCR |= _mm_cvtsi128_si32(_mm_srli_epi32(vIXCUFCOFCDZC, 1));
+
     FPSCR |= fpsr_exc;
     FPSCR |= fpsr_qc != 0 ? 1 << 27 : 0;
 
@@ -186,23 +225,28 @@ void A32JitState::SetFpscr(u32 FPSCR) {
     upper_location_descriptor |= FPSCR & FPSCR_MODE_MASK;
 
     fpsr_nzcv = FPSCR & FPSCR_NZCV_MASK;
-    fpsr_qc = (FPSCR >> 27) & 1;
+
+    // Use SIMD instructions on x64
+    __m128i vFPSCR = _mm_set_epi32(0, 0, 0, FPSCR);
+    __m128i vQFlag = _mm_and_si128(_mm_srli_epi32(vFPSCR, 27), _mm_set1_epi32(1));
+    fpsr_qc = _mm_cvtsi128_si32(vQFlag);
+
+    __m128i vRMode = _mm_set_epi32(0, 0, 0, FPSCR);
+    vRMode = _mm_and_si128(_mm_srli_epi32(vRMode, 22), _mm_set1_epi32(0x3));
+    const __m128i vMXCSR_RMode = _mm_set_epi32(0x6000, 0x2000, 0x4000, 0x0);
+    guest_MXCSR |= _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_and_si128(vRMode, vMXCSR_RMode), _MM_SHUFFLE(0, 0, 0, 0)));
+
+    __m128i vFlushToZero = _mm_and_si128(_mm_srli_epi32(vFPSCR, 24), _mm_set1_epi32(1));
+    if (_mm_cvtsi128_si32(vFlushToZero)) {
+        guest_MXCSR |= (1 << 15);  // SSE Flush to Zero
+        guest_MXCSR |= (1 << 6);   // SSE Denormals are Zero
+    }
 
     guest_MXCSR = 0x00001f80;
     asimd_MXCSR = 0x00009fc0;
 
-    // RMode
-    const std::array<u32, 4> MXCSR_RMode{0x0, 0x4000, 0x2000, 0x6000};
-    guest_MXCSR |= MXCSR_RMode[(FPSCR >> 22) & 0x3];
-
     // Cumulative flags IDC, IOC, IXC, UFC, OFC, DZC
     fpsr_exc = FPSCR & 0x9F;
-
-    if (mcl::bit::get_bit<24>(FPSCR)) {
-        // VFP Flush to Zero
-        guest_MXCSR |= (1 << 15);  // SSE Flush to Zero
-        guest_MXCSR |= (1 << 6);   // SSE Denormals are Zero
-    }
 }
 
 }  // namespace Dynarmic::Backend::X64
