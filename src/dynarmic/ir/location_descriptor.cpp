@@ -5,12 +5,22 @@
 
 #include "dynarmic/ir/location_descriptor.h"
 
-#include <fmt/format.h>
+#include <cstring>
 
 namespace Dynarmic::IR {
-
 std::string ToString(const LocationDescriptor& descriptor) {
-    return fmt::format("{{{:016x}}}", descriptor.Value());
-}
+    char buffer[18]; // 16 hex digits + { } + null terminator
+    char* ptr = buffer;
+    *ptr++ = '{';
 
+    uint64_t value = descriptor.Value();
+    for (int i = 0; i < 16; i++) {
+        *ptr++ = "0123456789ABCDEF"[(value >> ((15 - i) * 4)) & 0xF];
+    }
+
+    *ptr++ = '}';
+    *ptr = '\0';
+
+    return std::string(buffer, ptr - buffer);
+}
 }  // namespace Dynarmic::IR
