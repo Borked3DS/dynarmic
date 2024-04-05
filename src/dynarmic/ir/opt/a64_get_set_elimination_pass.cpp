@@ -38,10 +38,11 @@ struct RegisterInfo {
 const int REG_INFO_SIZE = 31;
 const int VEC_INFO_SIZE = 32;
 
-RegisterInfo* reg_info = new RegisterInfo[REG_INFO_SIZE];
-RegisterInfo* vec_info = new RegisterInfo[VEC_INFO_SIZE];
-RegisterInfo sp_info;
-RegisterInfo nzcv_info;
+// Initialize the arrays with default values
+RegisterInfo reg_info[REG_INFO_SIZE] = {};
+RegisterInfo vec_info[VEC_INFO_SIZE] = {};
+RegisterInfo sp_info = {};
+RegisterInfo nzcv_info = {};
 
 const auto do_set = [&block](RegisterInfo& info, IR::Value value, Iterator set_inst, TrackingType tracking_type) {
     if (info.set_instruction_present) {
@@ -69,10 +70,9 @@ const auto do_get = [&](RegisterInfo& info, Iterator get_inst, TrackingType trac
         get_inst->ReplaceUsesWith(info.register_value);
         return;
     }
-
 };
 
-    for (auto inst = block.begin(); inst != block.end(); ++inst) {
+for (auto inst = block.begin(); inst != block.end(); ++inst) {
         switch (inst->GetOpcode()) {
         case IR::Opcode::A64GetW: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
@@ -144,18 +144,22 @@ const auto do_get = [&](RegisterInfo& info, Iterator get_inst, TrackingType trac
             do_set(nzcv_info, inst->GetArg(0), inst, TrackingType::NZCVRaw);
             break;
         }
-        default: {
-            if (inst->ReadsFromCPSR() || inst->WritesToCPSR()) {
-                nzcv_info = {};
+         default: {
+        if (inst->ReadsFromCPSR() || inst->WritesToCPSR()) {
+            nzcv_info = {};
+        }
+        if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
+            // Reset the arrays
+            for (size_t i = 0; i < REG_INFO_SIZE; i++) {
+                reg_info[i] = {};
             }
-            if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
-                reg_info = {};
-                vec_info = {};
-                sp_info = {};
-                delete[] reg_info;
-				delete[] vec_info;
+            for (size_t i = 0; i < VEC_INFO_SIZE; i++) {
+                vec_info[i] = {};
             }
-            break;
+            sp_info = {};
+            nzcv_info = {};
+        }
+        break;
         }
         }
     }
