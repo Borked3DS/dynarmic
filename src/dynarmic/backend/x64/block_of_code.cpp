@@ -22,7 +22,6 @@
 #include <cstring>
 
 #include <mcl/assert.hpp>
-#include <mcl/bit/bit_field.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
@@ -184,21 +183,21 @@ HostFeature GetHostFeatures() {
         features |= HostFeature::GFNI;
 
     if (cpu_info.has(Cpu::tBMI2)) {
-        // BMI2 instructions such as pdep and pext have been very slow up until Zen 3.
-        // Check for Zen 3 or newer by its family (0x19).
-        // See also: https://en.wikichip.org/wiki/amd/cpuid
-        if (cpu_info.has(Cpu::tAMD)) {
-            std::array<u32, 4> data{};
-            cpu_info.getCpuid(1, data.data());
-            const u32 family_base = mcl::bit::get_bits<8, 11>(data[0]);
-            const u32 family_extended = mcl::bit::get_bits<20, 27>(data[0]);
-            const u32 family = family_base + family_extended;
-            if (family >= 0x19)
-                features |= HostFeature::FastBMI2;
-        } else {
+    // BMI2 instructions such as pdep and pext have been very slow up until Zen 3.
+    // Check for Zen 3 or newer by its family (0x19).
+    // See also: https://en.wikichip.org/wiki/amd/cpuid
+    if (cpu_info.has(Cpu::tAMD)) {
+        std::array<u32, 4> data{};
+        cpu_info.getCpuid(1, data.data());
+        const u32 family_base = (data[0] >> 8) & 0xF;
+        const u32 family_extended = (data[0] >> 20) & 0xFF;
+        const u32 family = family_base + family_extended;
+        if (family >= 0x19)
             features |= HostFeature::FastBMI2;
-        }
+    } else {
+        features |= HostFeature::FastBMI2;
     }
+}
 #endif
 
     return features;
