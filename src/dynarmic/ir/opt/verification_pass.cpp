@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <cstdio>
 #include <unordered_map>
 
 #include <mcl/assert.hpp>
@@ -16,6 +15,14 @@
 #include "dynarmic/ir/type.h"
 
 namespace Dynarmic::Optimization {
+
+int custom_puts(const char* str) {
+    int len = 0;
+    while (str[len] != '\0') {
+        len++;
+    }
+    return write(STDOUT_FILENO, str, len) == len ? len : -1;
+}
 
 void VerificationPass(const IR::Block& block) {
     for (const auto& inst : block) {
@@ -30,8 +37,7 @@ void VerificationPass(const IR::Block& block) {
     }
 
     std::unordered_map<IR::Inst*, size_t> actual_uses;
-    actual_uses.reserve(block.size());  // Reserve space for the unordered_map
-
+    actual_uses.reserve(block.size()); // Reserve space for the unordered_map
     for (const auto& inst : block) {
         for (size_t i = 0; i < inst.NumArgs(); i++) {
             const auto arg = inst.GetArg(i);
@@ -47,4 +53,3 @@ void VerificationPass(const IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
-
