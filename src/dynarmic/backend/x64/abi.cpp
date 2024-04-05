@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <mcl/iterator/reverse.hpp>
 #include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 
@@ -97,7 +96,8 @@ void ABI_PopRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const 
         code.add(rsp, u32(frame_info.stack_subtraction));
     }
 
-    for (HostLoc gpr : mcl::iterator::reverse(regs)) {
+    for (auto it = regs.rbegin(); it != regs.rend(); ++it) {
+        HostLoc gpr = *it;
         if (HostLocIsGPR(gpr)) {
             code.pop(HostLocToReg64(gpr));
         }
