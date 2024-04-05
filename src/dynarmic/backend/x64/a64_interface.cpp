@@ -68,33 +68,36 @@ public:
     ~Impl() = default;
 
     HaltReason Run() {
-        ASSERT(!is_executing);
-        PerformRequestedCacheInvalidation(static_cast<HaltReason>(Atomic::Load(&jit_state.halt_reason)));
+    ASSERT(!is_executing);
+    PerformRequestedCacheInvalidation(static_cast<HaltReason>(Atomic::Load(&jit_state.halt_reason)));
 
-        is_executing = true;
-        SCOPE_EXIT {
-            this->is_executing = false;
-        };
+    is_executing = true;
+    SCOPE_EXIT {
+        this->is_executing = false;
+    };
 
-        // TODO: Check code alignment
+    // Check code alignment
+    const CodePtr aligned_code_ptr = reinterpret_cast<CodePtr>(
+        (reinterpret_cast<uintptr_t>(GetCurrentBlock()) + 15) & ~static_cast<uintptr_t>(15)
+    );
 
-        const CodePtr current_code_ptr = [this] {
-            // RSB optimization
-            const u32 new_rsb_ptr = (jit_state.rsb_ptr - 1) & A64JitState::RSBPtrMask;
-            if (jit_state.GetUniqueHash() == jit_state.rsb_location_descriptors[new_rsb_ptr]) {
-                jit_state.rsb_ptr = new_rsb_ptr;
-                return reinterpret_cast<CodePtr>(jit_state.rsb_codeptrs[new_rsb_ptr]);
-            }
+    const CodePtr current_code_ptr = [this, aligned_code_ptr] {
+        // RSB optimization
+        const u32 new_rsb_ptr = (jit_state.rsb_ptr - 1) & A64JitState::RSBPtrMask;
+        if (jit_state.GetUniqueHash() == jit_state.rsb_location_descriptors[new_rsb_ptr]) {
+            jit_state.rsb_ptr = new_rsb_ptr;
+            return reinterpret_cast<CodePtr>(jit_state.rsb_codeptrs[new_rsb_ptr]);
+        }
 
-            return GetCurrentBlock();
-        }();
+        return aligned_code_ptr;
+    }();
 
-        const HaltReason hr = block_of_code.RunCode(&jit_state, current_code_ptr);
+    const HaltReason hr = block_of_code.RunCode(&jit_state, current_code_ptr);
 
-        PerformRequestedCacheInvalidation(hr);
+    PerformRequestedCacheInvalidation(hr);
 
-        return hr;
-    }
+    return hr;
+}
 
     HaltReason Step() {
         ASSERT(!is_executing);
