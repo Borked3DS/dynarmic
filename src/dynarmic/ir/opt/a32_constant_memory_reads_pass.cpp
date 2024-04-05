@@ -10,9 +10,14 @@
 
 namespace Dynarmic::Optimization {
 
+struct CachedMemoryEntry {
+    bool is_read_only;
+    u64 value;
+};
+
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
     constexpr size_t kCacheSize = 1024;
-    std::pair<bool, u64> cache[kCacheSize] = {};
+    CachedMemoryEntry cache[kCacheSize] = {};
     bool cache_valid[kCacheSize] = {};
 
     for (auto& inst : block) {
@@ -28,12 +33,12 @@ void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
             const u32 vaddr = inst.GetArg(1).GetU32();
             const size_t index = vaddr % kCacheSize;
 
-            if (cache_valid[index] && cache[index].first) {
-                inst.ReplaceUsesWith(IR::Value{cache[index].second});
+            if (cache_valid[index] && cache[index].is_read_only) {
+                inst.ReplaceUsesWith(IR::Value{cache[index].value});
             } else {
                 bool is_read_only = cb->IsReadOnlyMemory(vaddr);
                 u64 value_from_memory = is_read_only ? cb->MemoryRead64(vaddr) : 0;
-                cache[index] = std::make_pair(is_read_only, value_from_memory);
+                cache[index] = {is_read_only, value_from_memory};
                 cache_valid[index] = true;
             }
             break;
