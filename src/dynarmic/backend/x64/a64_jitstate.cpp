@@ -5,7 +5,7 @@
 
 #include "dynarmic/backend/x64/a64_jitstate.h"
 
-#include <mcl/bit/bit_field.hpp>
+#include <emmintrin.h>
 
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 
@@ -55,18 +55,26 @@ u32 A64JitState::GetFpcr() const {
 }
 
 void A64JitState::SetFpcr(u32 value) {
-    fpcr = value & FPCR_MASK;
+    // Use SIMD instructions on x64
+    __m128i vValue = _mm_set_epi32(0, 0, 0, value);
 
+    // FPCR
+    fpcr = _mm_cvtsi128_si32(_mm_and_si128(vValue, _mm_set1_epi32(FPCR_MASK)));
+
+    // MXCSR
     asimd_MXCSR &= 0x0000003D;
     guest_MXCSR &= 0x0000003D;
     asimd_MXCSR |= 0x00001f80;
     guest_MXCSR |= 0x00001f80;  // Mask all exceptions
 
     // RMode
-    const std::array<u32, 4> MXCSR_RMode{0x0, 0x4000, 0x2000, 0x6000};
-    guest_MXCSR |= MXCSR_RMode[(value >> 22) & 0x3];
+    __m128i vRMode = _mm_and_si128(_mm_srli_epi32(vValue, 22), _mm_set1_epi32(0x3));
+    const __m128i vMXCSR_RMode = _mm_set_epi32(0x6000, 0x2000, 0x4000, 0x0);
+    guest_MXCSR |= _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_and_si128(vRMode, vMXCSR_RMode), _MM_SHUFFLE(0, 0, 0, 0)));
 
-    if (mcl::bit::get_bit<24>(value)) {
+    // Flush to Zero
+    __m128i vFlushToZero = _mm_and_si128(_mm_srli_epi32(vValue, 24), _mm_set1_epi32(1));
+    if (_mm_cvtsi128_si32(vFlushToZero)) {
         guest_MXCSR |= (1 << 15);  // SSE Flush to Zero
         guest_MXCSR |= (1 << 6);   // SSE Denormals are Zero
     }
@@ -97,20 +105,35 @@ void A64JitState::SetFpcr(u32 value) {
  */
 
 u32 A64JitState::GetFpsr() const {
+    // Use SIMD instructions on x64
     const u32 mxcsr = guest_MXCSR | asimd_MXCSR;
+    __m128i vMXCSR = _mm_set_epi32(0, 0, 0, mxcsr);
+
+    __m128i vIOC = _mm_and_si128(_mm_set1_epi32(0b0000000000001), vMXCSR);
+    __m128i vIXCUFCOFCDZC = _mm_and_si128(_mm_set1_epi32(0b0000000111100), vMXCSR);
+
     u32 fpsr = 0;
-    fpsr |= (mxcsr & 0b0000000000001);       // IOC = IE
-    fpsr |= (mxcsr & 0b0000000111100) >> 1;  // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
+    fpsr |= _mm_cvtsi128_si32(vIOC);                 // IOC = IE
+    fpsr |= _mm_cvtsi128_si32(_mm_srli_epi32(vIXCUFCOFCDZC, 1)); // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
     fpsr |= fpsr_exc;
     fpsr |= (fpsr_qc == 0 ? 0 : 1) << 27;
     return fpsr;
 }
 
 void A64JitState::SetFpsr(u32 value) {
+    // Use SIMD instructions on x64
+    __m128i vValue = _mm_set_epi32(0, 0, 0, value);
+
+    // Clear the relevant bits in guest_MXCSR and asimd_MXCSR
     guest_MXCSR &= ~0x0000003D;
     asimd_MXCSR &= ~0x0000003D;
-    fpsr_qc = (value >> 27) & 1;
-    fpsr_exc = value & 0x9F;
+
+    // Set the Q flag
+    __m128i vQFlag = _mm_and_si128(_mm_srli_epi32(vValue, 27), _mm_set1_epi32(1));
+    fpsr_qc = _mm_cvtsi128_si32(vQFlag);
+
+    // Set the exception flags
+    fpsr_exc = _mm_cvtsi128_si32(_mm_and_si128(vValue, _mm_set1_epi32(0x9F)));
 }
 
 }  // namespace Dynarmic::Backend::X64
