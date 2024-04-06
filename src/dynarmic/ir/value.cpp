@@ -6,7 +6,6 @@
 #include "dynarmic/ir/value.h"
 
 #include <mcl/assert.hpp>
-#include <mcl/bit/bit_field.hpp>
 
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
@@ -204,11 +203,11 @@ s64 Value::GetImmediateAsS64() const {
     case IR::Type::U1:
         return s64(GetU1());
     case IR::Type::U8:
-        return s64(mcl::bit::sign_extend<8, u64>(GetU8()));
+        return s64(static_cast<s8>(GetU8()));
     case IR::Type::U16:
-        return s64(mcl::bit::sign_extend<16, u64>(GetU16()));
+        return s64(static_cast<s16>(GetU16()));
     case IR::Type::U32:
-        return s64(mcl::bit::sign_extend<32, u64>(GetU32()));
+        return s64(static_cast<s32>(GetU32()));
     case IR::Type::U64:
         return s64(GetU64());
     default:
