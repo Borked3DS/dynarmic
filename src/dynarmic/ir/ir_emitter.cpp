@@ -8,7 +8,6 @@
 #include <vector>
 
 #include <mcl/assert.hpp>
-#include <mcl/bit_cast.hpp>
 
 #include "dynarmic/ir/opcodes.h"
 
@@ -2868,19 +2867,19 @@ void IREmitter::Breakpoint() {
 }
 
 void IREmitter::CallHostFunction(void (*fn)(void)) {
-    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), Value{}, Value{}, Value{});
+    Inst(Opcode::CallHostFunction, Imm64(reinterpret_cast<u64>(fn)), Value{}, Value{}, Value{});
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64), const U64& arg1) {
-    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1, Value{}, Value{});
+    Inst(Opcode::CallHostFunction, Imm64(reinterpret_cast<u64>(fn)), arg1, Value{}, Value{});
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64, u64), const U64& arg1, const U64& arg2) {
-    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1, arg2, Value{});
+    Inst(Opcode::CallHostFunction, Imm64(reinterpret_cast<u64>(fn)), arg1, arg2, Value{});
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64, u64, u64), const U64& arg1, const U64& arg2, const U64& arg3) {
-    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1, arg2, arg3);
+    Inst(Opcode::CallHostFunction, Imm64(reinterpret_cast<u64>(fn)), arg1, arg2, arg3);
 }
 
 void IREmitter::SetTerm(const Terminal& terminal) {
