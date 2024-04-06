@@ -93,7 +93,7 @@ bool Inst::IsSharedMemoryWrite() const {
     }
 }
 
-bool Inst::IsSharedMemoryReadOrWrite() const {
+inline bool Inst::IsSharedMemoryReadOrWrite() const {
     return IsSharedMemoryRead()
         || IsSharedMemoryWrite();
 }
@@ -134,17 +134,17 @@ bool Inst::IsExclusiveMemoryWrite() const {
     }
 }
 
-bool Inst::IsMemoryRead() const {
+inline bool Inst::IsMemoryRead() const {
     return IsSharedMemoryRead()
         || IsExclusiveMemoryRead();
 }
 
-bool Inst::IsMemoryWrite() const {
+inline bool Inst::IsMemoryWrite() const {
     return IsSharedMemoryWrite()
         || IsExclusiveMemoryWrite();
 }
 
-bool Inst::IsMemoryReadOrWrite() const {
+inline bool Inst::IsMemoryReadOrWrite() const {
     return IsMemoryRead()
         || IsMemoryWrite();
 }
@@ -277,11 +277,11 @@ bool Inst::WritesToFPSR() const {
         || WritesToFPSRCumulativeSaturationBit();
 }
 
-bool Inst::ReadsFromFPSRCumulativeExceptionBits() const {
+inline bool Inst::ReadsFromFPSRCumulativeExceptionBits() const {
     return ReadsFromAndWritesToFPSRCumulativeExceptionBits();
 }
 
-bool Inst::WritesToFPSRCumulativeExceptionBits() const {
+inline bool Inst::WritesToFPSRCumulativeExceptionBits() const {
     return ReadsFromAndWritesToFPSRCumulativeExceptionBits();
 }
 
@@ -413,7 +413,7 @@ bool Inst::ReadsFromAndWritesToFPSRCumulativeExceptionBits() const {
     }
 }
 
-bool Inst::ReadsFromFPSRCumulativeSaturationBit() const {
+inline bool Inst::ReadsFromFPSRCumulativeSaturationBit() const {
     return false;
 }
 
