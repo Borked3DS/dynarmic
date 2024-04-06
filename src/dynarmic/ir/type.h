@@ -47,10 +47,12 @@ constexpr Type operator&(Type a, Type b) {
 std::string GetNameOf(Type type);
 
 /// @returns true if t1 and t2 are compatible types
-bool AreTypesCompatible(Type t1, Type t2);
+inline bool AreTypesCompatible(Type t1, Type t2) {
+    return t1 == t2 || t1 == Type::Opaque || t2 == Type::Opaque;
 
 }  // namespace Dynarmic::IR
 
+}
 template<>
 struct fmt::formatter<Dynarmic::IR::Type> : fmt::formatter<std::string> {
     template<typename FormatContext>

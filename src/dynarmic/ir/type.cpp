@@ -32,8 +32,5 @@ std::string GetNameOf(Type type) {
     }
     return result;
 }
-bool AreTypesCompatible(Type t1, Type t2) {
-    return t1 == t2 || t1 == Type::Opaque || t2 == Type::Opaque;
-}
 
 }  // namespace Dynarmic::IR
