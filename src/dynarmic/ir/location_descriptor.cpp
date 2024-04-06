@@ -5,22 +5,18 @@
 
 #include "dynarmic/ir/location_descriptor.h"
 
-#include <cstring>
-
 namespace Dynarmic::IR {
 std::string ToString(const LocationDescriptor& descriptor) {
-    char buffer[18]; // 16 hex digits + { } + null terminator
-    char* ptr = buffer;
-    *ptr++ = '{';
-
+    static const char* hex_digits = "0123456789ABCDEF";
     uint64_t value = descriptor.Value();
-    for (int i = 0; i < 16; i++) {
-        *ptr++ = "0123456789ABCDEF"[(value >> ((15 - i) * 4)) & 0xF];
-    }
-
-    *ptr++ = '}';
-    *ptr = '\0';
-
-    return std::string(buffer, ptr - buffer);
+    return std::string("{") + hex_digits[(value >> 60) & 0xF] +
+           hex_digits[(value >> 56) & 0xF] + hex_digits[(value >> 52) & 0xF] +
+           hex_digits[(value >> 48) & 0xF] + hex_digits[(value >> 44) & 0xF] +
+           hex_digits[(value >> 40) & 0xF] + hex_digits[(value >> 36) & 0xF] +
+           hex_digits[(value >> 32) & 0xF] + hex_digits[(value >> 28) & 0xF] +
+           hex_digits[(value >> 24) & 0xF] + hex_digits[(value >> 20) & 0xF] +
+           hex_digits[(value >> 16) & 0xF] + hex_digits[(value >> 12) & 0xF] +
+           hex_digits[(value >> 8) & 0xF] + hex_digits[(value >> 4) & 0xF] +
+           hex_digits[value & 0xF] + "}";
 }
 }  // namespace Dynarmic::IR
