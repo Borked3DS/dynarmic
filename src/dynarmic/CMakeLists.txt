@@ -77,7 +77,6 @@ add_library(dynarmic
     ir/cond.h
     ir/ir_emitter.cpp
     ir/ir_emitter.h
-    ir/location_descriptor.cpp
     ir/location_descriptor.h
     ir/microinstruction.cpp
     ir/microinstruction.h
