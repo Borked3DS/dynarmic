@@ -6,6 +6,7 @@
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include "dynarmic/ir/basic_block.h"
@@ -24,16 +25,15 @@ static size_t IR_Inst_Hash(const IR::Inst* inst) {
     return reinterpret_cast<size_t>(inst) % HASH_TABLE_SIZE;
 }
 
-// Hash table node
-struct HashNode {
+// Linked list node for the hash table
+typedef struct HashNode {
     const IR::Inst* key;
     size_t value;
-    HashNode* next;
-};
+    struct HashNode* next;
+} HashNode;
 
-// Hash table
-static HashNode hash_table[HASH_TABLE_SIZE * 2] = {0};
-static size_t hash_table_size = 0;
+// Initialize the hash table
+static HashNode* hash_table[HASH_TABLE_SIZE] = {0};
 
 void VerificationPass(const IR::Block& block) {
     for (const auto& inst : block) {
@@ -49,7 +49,6 @@ void VerificationPass(const IR::Block& block) {
 
     // Initialize the hash table
     memset(hash_table, 0, sizeof(hash_table));
-    hash_table_size = 0;
 
     // Populate the hash table
     for (const auto& inst : block) {
@@ -57,18 +56,16 @@ void VerificationPass(const IR::Block& block) {
             const auto arg = inst.GetArg(i);
             if (!arg.IsImmediate()) {
                 size_t hash = IR_Inst_Hash(arg.GetInst());
-                HashNode* node = &hash_table[hash];
-                while (node->key != nullptr && node->key != arg.GetInst()) {
-                    node++;
-                    hash_table_size++;
-                    if (hash_table_size >= sizeof(hash_table) / sizeof(HashNode)) {
-                        ASSERT_FALSE("Hash table overflow");
-                    }
+                HashNode* node = hash_table[hash];
+                while (node != nullptr && node->key != arg.GetInst()) {
+                    node = node->next;
                 }
-                if (node->key == nullptr) {
+                if (node == nullptr) {
+                    node = static_cast<HashNode*>(std::malloc(sizeof(HashNode)));
                     node->key = arg.GetInst();
                     node->value = 0;
-                    node->next = nullptr;
+                    node->next = hash_table[hash];
+                    hash_table[hash] = node;
                 }
                 node->value++;
             }
@@ -76,12 +73,24 @@ void VerificationPass(const IR::Block& block) {
     }
 
     // Verify the use counts
-    for (size_t i = 0; i < hash_table_size; i++) {
-        const HashNode* node = &hash_table[i];
-        if (node->key != nullptr) {
+    for (size_t i = 0; i < HASH_TABLE_SIZE; i++) {
+        HashNode* node = hash_table[i];
+        while (node != nullptr) {
             ASSERT(node->key->UseCount() == node->value);
+            node = node->next;
+        }
+    }
+
+    // Cleanup the hash table
+    for (size_t i = 0; i < HASH_TABLE_SIZE; i++) {
+        HashNode* node = hash_table[i];
+        while (node != nullptr) {
+            HashNode* next = node->next;
+            std::free(node);
+            node = next;
         }
     }
 }
 
 }  // namespace Dynarmic::Optimization
+
