@@ -81,16 +81,8 @@ void VerificationPass(const IR::Block& block) {
         }
     }
 
-    // Cleanup the hash table
-    for (size_t i = 0; i < HASH_TABLE_SIZE; i++) {
-        HashNode* node = hash_table[i];
-        while (node != nullptr) {
-            HashNode* next = node->next;
-            std::free(node);
-            node = next;
-        }
-    }
+// Cleanup the hash table
+memset(hash_table, 0, sizeof(hash_table));
 }
 
 }  // namespace Dynarmic::Optimization
-
