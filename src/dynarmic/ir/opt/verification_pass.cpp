@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
