@@ -90,7 +90,7 @@ void ForceDenormalsToZero(BlockOfCode& code, std::initializer_list<Xbyak::Xmm> t
             FpFixup::Norm_Src,
             FpFixup::Norm_Src);
 
-        const Xbyak::Xmm tmp = xmm16;
+        const Xbyak::Xmm tmp = xmm0;
         FCODE(vmovap)(tmp, code.BConst<fsize>(xword, denormal_to_zero));
 
         for (const Xbyak::Xmm& xmm : to_daz) {
