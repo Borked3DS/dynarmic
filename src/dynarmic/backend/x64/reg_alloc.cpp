@@ -140,26 +140,26 @@ void HostLocInfo::ReleaseAll() {
 }
 
 bool HostLocInfo::ContainsValue(const IR::Inst* inst) const {
-    return std::find(values.begin(), values.end(), inst) != values.end();
+    return values.find(inst) != values.end();
 }
 
 size_t HostLocInfo::GetMaxBitWidth() const {
     return max_bit_width;
 }
 
-void HostLocInfo::AddValue(IR::Inst* inst) {
+void HostLocInfo::AddValue(const IR::Inst* inst) {
     if (is_set_last_use) {
         is_set_last_use = false;
         values.clear();
     }
-    values.push_back(inst);
+    values.insert(inst);
     total_uses += inst->UseCount();
     max_bit_width = std::max(max_bit_width, GetBitWidth(inst->GetType()));
 }
 
 void HostLocInfo::EmitVerboseDebuggingOutput(BlockOfCode& code, size_t host_loc_index) const {
     using namespace Xbyak::util;
-    for (IR::Inst* value : values) {
+    for (const IR::Inst* value : values) {
         code.mov(code.ABI_PARAM1, rsp);
         code.mov(code.ABI_PARAM2, host_loc_index);
         code.mov(code.ABI_PARAM3, value->GetName());
