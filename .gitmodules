@@ -9,10 +9,10 @@
 	url = https://github.com/fmtlib/fmt
 [submodule "externals/mcl"]
 	path = externals/mcl
-	url = https://github.com/rtiangha/mcl
+	url = https://github.com/Borked3DS/mcl
 [submodule "externals/oaknut"]
 	path = externals/oaknut
-	url = https://github.com/rtiangha/oaknut
+	url = https://github.com/Borked3DS/oaknut
 [submodule "externals/robin-map"]
 	path = externals/robin-map
 	url = https://github.com/Tessil/robin-map
@@ -27,7 +27,7 @@
 	url = https://github.com/zyantific/zydis
 [submodule "externals/ext-boost"]
 	path = externals/ext-boost
-	url = https://github.com/rtiangha/ext-boost
+	url = https://github.com/Borked3DS/ext-boost
 [submodule "externals/unicorn"]
 	path = externals/unicorn
-	url = https://github.com/rtiangha/unicorn
+	url = https://github.com/Borked3DS/unicorn
