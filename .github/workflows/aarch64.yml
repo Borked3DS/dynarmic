@@ -20,10 +20,10 @@ jobs:
         run: >
           sudo apt-get update &&
           sudo apt-get install
-          gcc-11
-          g++-11
-          gcc-11-aarch64-linux-gnu
-          g++-11-aarch64-linux-gnu
+          gcc-14
+          g++-14
+          gcc-14-aarch64-linux-gnu
+          g++-14-aarch64-linux-gnu
           ninja-build
           qemu-user
 
@@ -39,8 +39,8 @@ jobs:
       - name: Configure CMake for AArch64 (Linux)
         if: matrix.platform == 'linux'
         env:
-          CC: aarch64-linux-gnu-gcc-11
-          CXX: aarch64-linux-gnu-g++-11
+          CC: aarch64-linux-gnu-gcc-14
+          CXX: aarch64-linux-gnu-g++-14
         run: >
           cmake
           -B ${{github.workspace}}/build-arm64
@@ -71,8 +71,8 @@ jobs:
       - name: Configure CMake for x86_64
         if: matrix.platform == 'linux'
         env:
-          CC: gcc-11
-          CXX: g++-11
+          CC: gcc-14
+          CXX: g++-14
         run: >
           cmake
           -B ${{github.workspace}}/build-x64
@@ -122,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     steps:
 
