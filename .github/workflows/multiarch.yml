@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
 
