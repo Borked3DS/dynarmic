@@ -5,6 +5,11 @@
 
 #include "dynarmic/backend/x64/a64_emit_x64.h"
 
+#include <algorithm>
+#include <cstdio>
+#include <vector>
+
+#include <boost/icl/discrete_interval.hpp>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <mcl/assert.hpp>
@@ -74,13 +79,17 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) {
         code.DisableWriting();
     };
 
-    const std::vector<HostLoc> gpr_order = [this] {
-        std::vector<HostLoc> gprs{any_gpr};
+    const std::vector<HostLoc> gpr_order = [this]() {
+        std::vector<HostLoc> gprs = {any_gpr};
         if (conf.page_table) {
-            gprs.erase(std::find(gprs.begin(), gprs.end(), HostLoc::R14));
+            auto it = std::find(gprs.begin(), gprs.end(), HostLoc::R14);
+            if (it != gprs.end())
+                gprs.erase(it);
         }
         if (conf.fastmem_pointer) {
-            gprs.erase(std::find(gprs.begin(), gprs.end(), HostLoc::R13));
+            auto it = std::find(gprs.begin(), gprs.end(), HostLoc::R13);
+            if (it != gprs.end())
+                gprs.erase(it);
         }
         return gprs;
     }();
