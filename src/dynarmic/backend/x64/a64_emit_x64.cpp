@@ -74,14 +74,17 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) {
         code.DisableWriting();
     };
 
-    const std::vector<HostLoc> gpr_order = [this] {
-        std::vector<HostLoc> gprs{any_gpr};
+    const std::vector<HostLoc> gpr_order = [this]() {
+        std::vector<HostLoc> gprs = {any_gpr};
+
         if (conf.page_table) {
-            gprs.erase(std::find(gprs.begin(), gprs.end(), HostLoc::R14));
+            gprs.erase(std::remove(gprs.begin(), gprs.end(), HostLoc::R14), gprs.end());
         }
+
         if (conf.fastmem_pointer) {
-            gprs.erase(std::find(gprs.begin(), gprs.end(), HostLoc::R13));
+            gprs.erase(std::remove(gprs.begin(), gprs.end(), HostLoc::R13), gprs.end());
         }
+
         return gprs;
     }();
 
