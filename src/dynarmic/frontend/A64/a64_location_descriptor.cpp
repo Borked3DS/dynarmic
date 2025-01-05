@@ -8,21 +8,21 @@
 #include <string>
 
 namespace Dynarmic::A64 {
-    std::string ToString(const LocationDescriptor& descriptor) {
-        std::string result;
-        result.reserve(32);  // Estimate the maximum size of the string
+std::string ToString(const LocationDescriptor& descriptor) {
+    std::string result;
+    result.reserve(32);  // Estimate the maximum size of the string
 
-        result = "{";
-        result += std::to_string(descriptor.PC());
-        result += ", ";
-        result += std::to_string(descriptor.FPCR().Value());
+    result = "{";
+    result += std::to_string(descriptor.PC());
+    result += ", ";
+    result += std::to_string(descriptor.FPCR().Value());
 
-        if (descriptor.SingleStepping()) {
-            result += ", step";
-        }
-
-        result += "}";
-
-        return result;
+    if (descriptor.SingleStepping()) {
+        result += ", step";
     }
+
+    result += "}";
+
+    return result;
+}
 }  // namespace Dynarmic::A64

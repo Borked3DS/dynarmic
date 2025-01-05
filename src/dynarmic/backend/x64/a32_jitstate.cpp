@@ -5,9 +5,10 @@
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
 
+#include <emmintrin.h>
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
-#include <emmintrin.h>
+
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
@@ -65,8 +66,7 @@ u32 A32JitState::Cpsr() const {
         (cpsr_ge >> 31) & 1 ? 1 << 19 : 0,
         (cpsr_ge >> 23) & 1 ? 1 << 18 : 0,
         (cpsr_ge >> 15) & 1 ? 1 << 17 : 0,
-        (cpsr_ge >> 7) & 1 ? 1 << 16 : 0
-    );
+        (cpsr_ge >> 7) & 1 ? 1 << 16 : 0);
     vCPSR = _mm_or_si128(vCPSR, vGEFlags);
 
     // E flag, T flag
@@ -74,8 +74,7 @@ u32 A32JitState::Cpsr() const {
         0,
         0,
         (upper_location_descriptor >> 1) & 1 ? 1 << 9 : 0,
-        (upper_location_descriptor >> 0) & 1 ? 1 << 5 : 0
-    );
+        (upper_location_descriptor >> 0) & 1 ? 1 << 5 : 0);
     vCPSR = _mm_or_si128(vCPSR, vETFlags);
 
     // IT state
@@ -83,19 +82,16 @@ u32 A32JitState::Cpsr() const {
         0,
         static_cast<u32>(upper_location_descriptor & 0b00000011'00000000) << 17,
         static_cast<u32>(upper_location_descriptor & 0b11111100'00000000),
-        0
-    );
+        0);
     vCPSR = _mm_or_si128(vCPSR, vITState);
 
     // Other flags
     vCPSR = _mm_or_si128(vCPSR, _mm_set_epi32(0, 0, 0, cpsr_jaifm));
 
     return _mm_cvtsi128_si32(vCPSR);
-    
 }
 
 void A32JitState::SetCpsr(u32 cpsr) {
-
     // Use SIMD instructions on x64
     __m128i vCPSR = _mm_set_epi32(0, 0, 0, cpsr);
 
@@ -111,12 +107,9 @@ void A32JitState::SetCpsr(u32 cpsr) {
         _mm_or_si128(
             _mm_or_si128(
                 _mm_and_si128(_mm_srli_epi32(vCPSR, 16), _mm_set1_epi32(0xFF)),
-                _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 17), _mm_set1_epi32(0xFF)), 8)
-            ),
-            _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 18), _mm_set1_epi32(0xFF)), 16)
-        ),
-        _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 19), _mm_set1_epi32(0xFF)), 24)
-    );
+                _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 17), _mm_set1_epi32(0xFF)), 8)),
+            _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 18), _mm_set1_epi32(0xFF)), 16)),
+        _mm_slli_epi32(_mm_and_si128(_mm_srli_epi32(vCPSR, 19), _mm_set1_epi32(0xFF)), 24));
     cpsr_ge = _mm_cvtsi128_si32(vGEFlags);
 
     upper_location_descriptor &= 0xFFFF0000;

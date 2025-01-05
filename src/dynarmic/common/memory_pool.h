@@ -15,6 +15,7 @@ public:
     Pool(size_t object_size, size_t initial_pool_size);
     ~Pool();
     void* Alloc();
+
 private:
     void AllocateNewSlab();
     size_t object_size;

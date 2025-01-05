@@ -5,10 +5,11 @@
 
 #include "dynarmic/common/x64_disassemble.h"
 
+#include <sstream>
+
 #include <Zydis/Zydis.h>
 #include <fmt/printf.h>
 #include <mcl/stdint.hpp>
-#include <sstream>
 
 namespace Dynarmic::Common {
 
@@ -51,5 +52,3 @@ std::vector<std::string> DisassembleX64(const void* ptr, size_t size) {
 }
 
 }  // namespace Dynarmic::Common
-
-

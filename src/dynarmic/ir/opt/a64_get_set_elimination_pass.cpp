@@ -28,51 +28,51 @@ void A64GetSetElimination(IR::Block& block) {
         NZCV,
         NZCVRaw,
     };
-struct RegisterInfo {
-    IR::Value register_value;
-    TrackingType tracking_type;
-    bool set_instruction_present = false;
-    Iterator last_set_instruction;
-};
+    struct RegisterInfo {
+        IR::Value register_value;
+        TrackingType tracking_type;
+        bool set_instruction_present = false;
+        Iterator last_set_instruction;
+    };
 
-const int REG_INFO_SIZE = 31;
-const int VEC_INFO_SIZE = 32;
+    const int REG_INFO_SIZE = 31;
+    const int VEC_INFO_SIZE = 32;
 
-// Initialize the arrays with default values
-RegisterInfo reg_info[REG_INFO_SIZE] = {};
-RegisterInfo vec_info[VEC_INFO_SIZE] = {};
-RegisterInfo sp_info = {};
-RegisterInfo nzcv_info = {};
+    // Initialize the arrays with default values
+    RegisterInfo reg_info[REG_INFO_SIZE] = {};
+    RegisterInfo vec_info[VEC_INFO_SIZE] = {};
+    RegisterInfo sp_info = {};
+    RegisterInfo nzcv_info = {};
 
-const auto do_set = [&block](RegisterInfo& info, IR::Value value, Iterator set_inst, TrackingType tracking_type) {
-    if (info.set_instruction_present) {
-        info.last_set_instruction->Invalidate();
-        block.Instructions().erase(info.last_set_instruction);
-    }
+    const auto do_set = [&block](RegisterInfo& info, IR::Value value, Iterator set_inst, TrackingType tracking_type) {
+        if (info.set_instruction_present) {
+            info.last_set_instruction->Invalidate();
+            block.Instructions().erase(info.last_set_instruction);
+        }
 
-    info.register_value = value;
-    info.tracking_type = tracking_type;
-    info.set_instruction_present = true;
-    info.last_set_instruction = set_inst;
-};
+        info.register_value = value;
+        info.tracking_type = tracking_type;
+        info.set_instruction_present = true;
+        info.last_set_instruction = set_inst;
+    };
 
-const auto do_get = [&](RegisterInfo& info, Iterator get_inst, TrackingType tracking_type) {
-    info.register_value = IR::Value(&*get_inst);
-    info.tracking_type = tracking_type;
-    info.set_instruction_present = true;
-    info.last_set_instruction = get_inst;
+    const auto do_get = [&](RegisterInfo& info, Iterator get_inst, TrackingType tracking_type) {
+        info.register_value = IR::Value(&*get_inst);
+        info.tracking_type = tracking_type;
+        info.set_instruction_present = true;
+        info.last_set_instruction = get_inst;
 
-    if (info.register_value.IsEmpty()) {
-        return;
-    }
+        if (info.register_value.IsEmpty()) {
+            return;
+        }
 
-    if (info.tracking_type == tracking_type) {
-        get_inst->ReplaceUsesWith(info.register_value);
-        return;
-    }
-};
+        if (info.tracking_type == tracking_type) {
+            get_inst->ReplaceUsesWith(info.register_value);
+            return;
+        }
+    };
 
-for (auto inst = block.begin(); inst != block.end(); ++inst) {
+    for (auto inst = block.begin(); inst != block.end(); ++inst) {
         switch (inst->GetOpcode()) {
         case IR::Opcode::A64GetW: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
@@ -144,22 +144,22 @@ for (auto inst = block.begin(); inst != block.end(); ++inst) {
             do_set(nzcv_info, inst->GetArg(0), inst, TrackingType::NZCVRaw);
             break;
         }
-         default: {
-        if (inst->ReadsFromCPSR() || inst->WritesToCPSR()) {
-            nzcv_info = {};
-        }
-        if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
-            // Reset the arrays
-            for (size_t i = 0; i < REG_INFO_SIZE; i++) {
-                reg_info[i] = {};
+        default: {
+            if (inst->ReadsFromCPSR() || inst->WritesToCPSR()) {
+                nzcv_info = {};
             }
-            for (size_t i = 0; i < VEC_INFO_SIZE; i++) {
-                vec_info[i] = {};
+            if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
+                // Reset the arrays
+                for (size_t i = 0; i < REG_INFO_SIZE; i++) {
+                    reg_info[i] = {};
+                }
+                for (size_t i = 0; i < VEC_INFO_SIZE; i++) {
+                    vec_info[i] = {};
+                }
+                sp_info = {};
+                nzcv_info = {};
             }
-            sp_info = {};
-            nzcv_info = {};
-        }
-        break;
+            break;
         }
         }
     }

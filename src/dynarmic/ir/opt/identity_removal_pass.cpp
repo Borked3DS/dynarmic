@@ -4,11 +4,11 @@
  */
 
 #include <cstdlib>
-#include "kvec.h"
 
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/opt/passes.h"
+#include "kvec.h"
 
 namespace Dynarmic::Optimization {
 
@@ -48,5 +48,3 @@ void IdentityRemovalPass(IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
-
-

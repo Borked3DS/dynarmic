@@ -14,7 +14,7 @@ namespace Dynarmic {
 u64 AdvSIMDExpandImm(bool op, Imm<4> cmode, Imm<8> imm8) {
     u64 extended_imm8 = imm8.ZeroExtend<u64>();
     u64 ones = mcl::bit::ones<u64>(8);
-    
+
     switch (cmode.Bits<1, 3>()) {
     case 0b000:
         return mcl::bit::replicate_element<u32, u64>(extended_imm8);

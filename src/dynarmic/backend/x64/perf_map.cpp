@@ -10,9 +10,9 @@
 
 #ifdef __linux__
 
+#    include <atomic>
 #    include <cstdio>
 #    include <cstdlib>
-#    include <atomic>
 
 #    include <fmt/format.h>
 #    include <mcl/stdint.hpp>

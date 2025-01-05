@@ -113,8 +113,8 @@ u32 A64JitState::GetFpsr() const {
     __m128i vIXCUFCOFCDZC = _mm_and_si128(_mm_set1_epi32(0b0000000111100), vMXCSR);
 
     u32 fpsr = 0;
-    fpsr |= _mm_cvtsi128_si32(vIOC);                 // IOC = IE
-    fpsr |= _mm_cvtsi128_si32(_mm_srli_epi32(vIXCUFCOFCDZC, 1)); // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
+    fpsr |= _mm_cvtsi128_si32(vIOC);                              // IOC = IE
+    fpsr |= _mm_cvtsi128_si32(_mm_srli_epi32(vIXCUFCOFCDZC, 1));  // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
     fpsr |= fpsr_exc;
     fpsr |= (fpsr_qc == 0 ? 0 : 1) << 27;
     return fpsr;

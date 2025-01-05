@@ -13,8 +13,7 @@ namespace Dynarmic::IR {
 std::string GetNameOf(Type type) {
     static constexpr const char* type_names[32] = {
         "Void", "A32Reg", "A32ExtReg", "A64Reg", "A64Vec", "Opaque",
-        "U1", "U8", "U16", "U32", "U64", "U128", "CoprocInfo", "NZCV", "Cond", "Table", "AccType"
-    };
+        "U1", "U8", "U16", "U32", "U64", "U128", "CoprocInfo", "NZCV", "Cond", "Table", "AccType"};
     static constexpr size_t type_name_count = sizeof(type_names) / sizeof(type_names[0]);
 
     std::string result;
@@ -28,7 +27,7 @@ std::string GetNameOf(Type type) {
     }
 
     if (result.empty()) {
-        return type_names[0]; // "Void"
+        return type_names[0];  // "Void"
     }
     return result;
 }

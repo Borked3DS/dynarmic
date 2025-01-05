@@ -5,9 +5,9 @@
 
 #include "dynarmic/backend/x64/verbose_debugging_output.h"
 
-#include <iterator>
 #include <cinttypes>
 #include <cstdarg>
+#include <iterator>
 
 #include "dynarmic/backend/x64/hostloc.h"
 

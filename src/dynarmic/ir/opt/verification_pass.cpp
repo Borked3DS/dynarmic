@@ -2,12 +2,13 @@
  * Copyright (c) 2016 MerryMage
  * SPDX-License-Identifier: 0BSD
  */
- 
-#include <mcl/assert.hpp>
-#include <mcl/stdint.hpp>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
 
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
@@ -84,5 +85,3 @@ void VerificationPass(const IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
-
-
