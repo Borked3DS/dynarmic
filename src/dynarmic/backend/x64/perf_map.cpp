@@ -60,8 +60,6 @@ void PerfMapRegister(const void* start, const void* end, std::string_view friend
         return;
     }
 
-    std::lock_guard guard{mutex};
-
     if (!file) {
         OpenFile();
         if (!file) {
