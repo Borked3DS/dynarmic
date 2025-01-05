@@ -5,8 +5,6 @@
 
 #include "dynarmic/frontend/A32/translate/conditional_state.h"
 
-#include <algorithm>
-
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
 
@@ -23,20 +21,16 @@ bool CondCanContinue(ConditionalState cond_state, const A32::IREmitter& ir) {
     if (cond_state == ConditionalState::None)
         return true;
 
-    // TODO: This is more conservative than necessary.
-    return std::all_of(ir.block.begin(), ir.block.end(), [](const IR::Inst& inst) { return !inst.WritesToCPSR(); });
+    if (ir.block.empty())
+        return true;
+
+    const IR::Inst& last_inst = ir.block.back();
+    return !last_inst.WritesToCPSR();
 }
 
 bool IsConditionPassed(TranslatorVisitor& v, IR::Cond cond) {
     ASSERT_MSG(v.cond_state != ConditionalState::Break,
                "This should never happen. We requested a break but that wasn't honored.");
-
-    if (cond == IR::Cond::NV) {
-        // NV conditional is obsolete
-        v.cond_state = ConditionalState::Break;
-        v.RaiseException(Exception::UnpredictableInstruction);
-        return false;
-    }
 
     if (v.cond_state == ConditionalState::Translating) {
         if (v.ir.block.ConditionFailedLocation() != v.ir.current_location || cond == IR::Cond::AL) {

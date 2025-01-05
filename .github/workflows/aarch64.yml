@@ -92,7 +92,9 @@ jobs:
       - name: Basic tests
         if: matrix.platform == 'linux'
         working-directory: ${{github.workspace}}
-        run: qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_tests -d yes
+        run: |
+          qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_tests -d yes
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
 
       - name: Test against x86_64 implementation (A32, thumb)
         if: matrix.platform == 'linux'
@@ -101,6 +103,7 @@ jobs:
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator thumb 42 1 100000) <(./build-x64/tests/dynarmic_test_generator thumb 42 1 100000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator thumb 42 10 10000) <(./build-x64/tests/dynarmic_test_generator thumb 42 10 10000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator thumb 42 100 1000) <(./build-x64/tests/dynarmic_test_generator thumb 42 100 1000)
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
 
       - name: Test against x86_64 implementation (A32, arm)
         if: matrix.platform == 'linux'
@@ -109,6 +112,7 @@ jobs:
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator arm 42 1 100000) <(./build-x64/tests/dynarmic_test_generator arm 42 1 100000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator arm 42 10 10000) <(./build-x64/tests/dynarmic_test_generator arm 42 10 10000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator arm 42 100 1000) <(./build-x64/tests/dynarmic_test_generator arm 42 100 1000)
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
 
       - name: Test against x86_64 implementation (A64)
         if: matrix.platform == 'linux'
@@ -117,6 +121,7 @@ jobs:
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator a64 42 1 100000) <(./build-x64/tests/dynarmic_test_generator a64 42 1 100000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator a64 42 10 10000) <(./build-x64/tests/dynarmic_test_generator a64 42 10 10000)
           diff <(qemu-aarch64 -L /usr/aarch64-linux-gnu ./build-arm64/tests/dynarmic_test_generator a64 42 100 1000) <(./build-x64/tests/dynarmic_test_generator a64 42 100 1000)
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
 
   build_windows:
     strategy:
@@ -149,4 +154,7 @@ jobs:
 
       - name: Build AArch64
         working-directory: ${{github.workspace}}/build-arm64
-        run: cmake --build . --config Release
+        run: |
+          ctest --extra-verbose -C ${{env.BUILD_TYPE}}
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
+

@@ -44,4 +44,7 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest --extra-verbose -C ${{env.BUILD_TYPE}}
+        run: |
+          ctest --extra-verbose -C ${{env.BUILD_TYPE}}
+          cat /home/runner/work/dynarmic/dynarmic/build/Testing/Temporary/LastTest.log
+

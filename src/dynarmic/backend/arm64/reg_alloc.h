@@ -8,6 +8,7 @@
 #include <array>
 #include <optional>
 #include <random>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -137,7 +138,7 @@ private:
 };
 
 struct HostLocInfo final {
-    std::vector<const IR::Inst*> values;
+    std::set<const IR::Inst*> values;
     size_t locked = 0;
     bool realized = false;
     size_t uses_this_inst = 0;

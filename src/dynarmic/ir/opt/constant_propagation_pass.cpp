@@ -50,25 +50,19 @@ bool FoldCommutative(IR::Inst& inst, bool is_32_bit, ImmFn imm_fn) {
         return false;
     }
 
-    if (is_lhs_immediate && !is_rhs_immediate) {
-        const IR::Inst* rhs_inst = rhs.GetInstRecursive();
-        if (rhs_inst->GetOpcode() == inst.GetOpcode() && rhs_inst->GetArg(1).IsImmediate()) {
-            const u64 combined = imm_fn(lhs.GetImmediateAsU64(), rhs_inst->GetArg(1).GetImmediateAsU64());
-            inst.SetArg(0, rhs_inst->GetArg(0));
+    if (is_lhs_immediate != is_rhs_immediate) {
+        const IR::Inst* immediate_inst = is_lhs_immediate ? rhs.GetInstRecursive() : lhs.GetInstRecursive();
+        const IR::Value immediate_value = is_lhs_immediate ? lhs : rhs;
+        const IR::Value non_immediate_value = is_lhs_immediate ? rhs : lhs;
+
+        if (immediate_inst->GetOpcode() == inst.GetOpcode() && immediate_inst->GetArg(1).IsImmediate()) {
+            const u64 combined = imm_fn(immediate_value.GetImmediateAsU64(), immediate_inst->GetArg(1).GetImmediateAsU64());
+            inst.SetArg(0, immediate_inst->GetArg(0));
             inst.SetArg(1, Value(is_32_bit, combined));
         } else {
             // Normalize
-            inst.SetArg(0, rhs);
-            inst.SetArg(1, lhs);
-        }
-    }
-
-    if (!is_lhs_immediate && is_rhs_immediate) {
-        const IR::Inst* lhs_inst = lhs.GetInstRecursive();
-        if (lhs_inst->GetOpcode() == inst.GetOpcode() && lhs_inst->GetArg(1).IsImmediate()) {
-            const u64 combined = imm_fn(rhs.GetImmediateAsU64(), lhs_inst->GetArg(1).GetImmediateAsU64());
-            inst.SetArg(0, lhs_inst->GetArg(0));
-            inst.SetArg(1, Value(is_32_bit, combined));
+            inst.SetArg(0, non_immediate_value);
+            inst.SetArg(1, immediate_value);
         }
     }
 
@@ -301,13 +295,13 @@ void FoldOR(IR::Inst& inst, bool is_32_bit) {
 bool FoldShifts(IR::Inst& inst) {
     IR::Inst* carry_inst = inst.GetAssociatedPseudoOperation(Op::GetCarryFromOp);
 
-    // The 32-bit variants can contain 3 arguments, while the
-    // 64-bit variants only contain 2.
-    if (inst.NumArgs() == 3 && !carry_inst) {
-        inst.SetArg(2, IR::Value(false));
-    }
-
     const auto shift_amount = inst.GetArg(1);
+
+    if (inst.NumArgs() == 3) {
+        if (!carry_inst && shift_amount.IsImmediate() && !shift_amount.IsZero()) {
+            inst.SetArg(2, IR::Value(false));
+        }
+    }
 
     if (shift_amount.IsZero()) {
         if (carry_inst) {
@@ -315,10 +309,6 @@ bool FoldShifts(IR::Inst& inst) {
         }
         inst.ReplaceUsesWith(inst.GetArg(0));
         return false;
-    }
-
-    if (inst.NumArgs() == 3 && shift_amount.IsImmediate() && !shift_amount.IsZero()) {
-        inst.SetArg(2, IR::Value(false));
     }
 
     if (!inst.AreAllArgsImmediates() || carry_inst) {

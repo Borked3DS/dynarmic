@@ -10,54 +10,36 @@
 
 namespace Dynarmic::Optimization {
 
+struct CachedMemoryEntry {
+    bool is_read_only;
+    u64 value;
+};
+
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
+    constexpr size_t kCacheSize = 1024;
+    CachedMemoryEntry cache[kCacheSize] = {};
+    bool cache_valid[kCacheSize] = {};
+
     for (auto& inst : block) {
         switch (inst.GetOpcode()) {
-        case IR::Opcode::A32ReadMemory8: {
-            if (!inst.AreAllArgsImmediates()) {
-                break;
-            }
-
-            const u32 vaddr = inst.GetArg(1).GetU32();
-            if (cb->IsReadOnlyMemory(vaddr)) {
-                const u8 value_from_memory = cb->MemoryRead8(vaddr);
-                inst.ReplaceUsesWith(IR::Value{value_from_memory});
-            }
-            break;
-        }
-        case IR::Opcode::A32ReadMemory16: {
-            if (!inst.AreAllArgsImmediates()) {
-                break;
-            }
-
-            const u32 vaddr = inst.GetArg(1).GetU32();
-            if (cb->IsReadOnlyMemory(vaddr)) {
-                const u16 value_from_memory = cb->MemoryRead16(vaddr);
-                inst.ReplaceUsesWith(IR::Value{value_from_memory});
-            }
-            break;
-        }
-        case IR::Opcode::A32ReadMemory32: {
-            if (!inst.AreAllArgsImmediates()) {
-                break;
-            }
-
-            const u32 vaddr = inst.GetArg(1).GetU32();
-            if (cb->IsReadOnlyMemory(vaddr)) {
-                const u32 value_from_memory = cb->MemoryRead32(vaddr);
-                inst.ReplaceUsesWith(IR::Value{value_from_memory});
-            }
-            break;
-        }
+        case IR::Opcode::A32ReadMemory8:
+        case IR::Opcode::A32ReadMemory16:
+        case IR::Opcode::A32ReadMemory32:
         case IR::Opcode::A32ReadMemory64: {
             if (!inst.AreAllArgsImmediates()) {
                 break;
             }
 
             const u32 vaddr = inst.GetArg(1).GetU32();
-            if (cb->IsReadOnlyMemory(vaddr)) {
-                const u64 value_from_memory = cb->MemoryRead64(vaddr);
-                inst.ReplaceUsesWith(IR::Value{value_from_memory});
+            const size_t index = vaddr % kCacheSize;
+
+            if (cache_valid[index] && cache[index].is_read_only) {
+                inst.ReplaceUsesWith(IR::Value{cache[index].value});
+            } else {
+                bool is_read_only = cb->IsReadOnlyMemory(vaddr);
+                u64 value_from_memory = is_read_only ? cb->MemoryRead64(vaddr) : 0;
+                cache[index] = {is_read_only, value_from_memory};
+                cache_valid[index] = true;
             }
             break;
         }

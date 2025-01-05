@@ -12,27 +12,30 @@
 namespace Dynarmic {
 
 u64 AdvSIMDExpandImm(bool op, Imm<4> cmode, Imm<8> imm8) {
+    u64 extended_imm8 = imm8.ZeroExtend<u64>();
+    u64 ones = mcl::bit::ones<u64>(8);
+
     switch (cmode.Bits<1, 3>()) {
     case 0b000:
-        return mcl::bit::replicate_element<u32, u64>(imm8.ZeroExtend<u64>());
+        return mcl::bit::replicate_element<u32, u64>(extended_imm8);
     case 0b001:
-        return mcl::bit::replicate_element<u32, u64>(imm8.ZeroExtend<u64>() << 8);
+        return mcl::bit::replicate_element<u32, u64>(extended_imm8 << 8);
     case 0b010:
-        return mcl::bit::replicate_element<u32, u64>(imm8.ZeroExtend<u64>() << 16);
+        return mcl::bit::replicate_element<u32, u64>(extended_imm8 << 16);
     case 0b011:
-        return mcl::bit::replicate_element<u32, u64>(imm8.ZeroExtend<u64>() << 24);
+        return mcl::bit::replicate_element<u32, u64>(extended_imm8 << 24);
     case 0b100:
-        return mcl::bit::replicate_element<u16, u64>(imm8.ZeroExtend<u64>());
+        return mcl::bit::replicate_element<u16, u64>(extended_imm8);
     case 0b101:
-        return mcl::bit::replicate_element<u16, u64>(imm8.ZeroExtend<u64>() << 8);
+        return mcl::bit::replicate_element<u16, u64>(extended_imm8 << 8);
     case 0b110:
         if (!cmode.Bit<0>()) {
-            return mcl::bit::replicate_element<u32, u64>((imm8.ZeroExtend<u64>() << 8) | mcl::bit::ones<u64>(8));
+            return mcl::bit::replicate_element<u32, u64>((extended_imm8 << 8) | ones);
         }
-        return mcl::bit::replicate_element<u32, u64>((imm8.ZeroExtend<u64>() << 16) | mcl::bit::ones<u64>(16));
+        return mcl::bit::replicate_element<u32, u64>((extended_imm8 << 16) | (ones << 8));
     case 0b111:
         if (!cmode.Bit<0>() && !op) {
-            return mcl::bit::replicate_element<u8, u64>(imm8.ZeroExtend<u64>());
+            return mcl::bit::replicate_element<u8, u64>(extended_imm8);
         }
         if (!cmode.Bit<0>() && op) {
             u64 result = 0;

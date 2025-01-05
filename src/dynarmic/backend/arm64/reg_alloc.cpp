@@ -86,7 +86,7 @@ HostLoc::Kind Argument::CurrentLocationKind() const {
 }
 
 bool HostLocInfo::Contains(const IR::Inst* value) const {
-    return std::find(values.begin(), values.end(), value) != values.end();
+    return values.find(value) != values.end();
 }
 
 void HostLocInfo::SetupScratchLocation() {
@@ -97,7 +97,8 @@ void HostLocInfo::SetupScratchLocation() {
 void HostLocInfo::SetupLocation(const IR::Inst* value) {
     ASSERT(IsCompletelyEmpty());
     values.clear();
-    values.push_back(value);
+    // TODO: Add support for multiple values
+    values.insert(value);
     realized = true;
     uses_this_inst = 0;
     accumulated_uses = 0;
@@ -199,7 +200,7 @@ void RegAlloc::DefineAsExisting(IR::Inst* inst, Argument& arg) {
     }
 
     auto& info = ValueInfo(arg.value.GetInst());
-    info.values.push_back(inst);
+    info.values.insert(inst);
     info.expected_uses += inst->UseCount();
 }
 
@@ -209,7 +210,7 @@ void RegAlloc::DefineAsRegister(IR::Inst* inst, oaknut::Reg reg) {
     ASSERT(!ValueLocation(inst));
     auto& info = reg.is_vector() ? fprs[reg.index()] : gprs[reg.index()];
     ASSERT(info.IsCompletelyEmpty());
-    info.values.push_back(inst);
+    info.values.insert(inst);
     info.expected_uses += inst->UseCount();
 }
 

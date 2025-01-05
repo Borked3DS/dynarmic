@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <cstdlib>
 #include <string>
 
 #include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <mcl/bit/bit_field.hpp>
 #include <mcl/bit/rotate.hpp>
 

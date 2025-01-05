@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <mcl/iterator/reverse.hpp>
 #include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 
@@ -49,7 +48,7 @@ void ABI_PushRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const
 
     FrameInfo frame_info = CalculateFrameInfo(num_gprs, num_xmms, frame_size);
 
-    for (HostLoc gpr : regs) {
+    for (const HostLoc& gpr : regs) {
         if (HostLocIsGPR(gpr)) {
             code.push(HostLocToReg64(gpr));
         }
@@ -60,7 +59,7 @@ void ABI_PushRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const
     }
 
     size_t xmm_offset = frame_info.xmm_offset;
-    for (HostLoc xmm : regs) {
+    for (const HostLoc& xmm : regs) {
         if (HostLocIsXMM(xmm)) {
             if (code.HasHostFeature(HostFeature::AVX)) {
                 code.vmovaps(code.xword[rsp + xmm_offset], HostLocToXmm(xmm));
@@ -97,7 +96,8 @@ void ABI_PopRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const 
         code.add(rsp, u32(frame_info.stack_subtraction));
     }
 
-    for (HostLoc gpr : mcl::iterator::reverse(regs)) {
+    for (auto it = regs.rbegin(); it != regs.rend(); ++it) {
+        HostLoc gpr = *it;
         if (HostLocIsGPR(gpr)) {
             code.pop(HostLocToReg64(gpr));
         }

@@ -19,16 +19,19 @@ void PolyfillSHA256MessageSchedule0(IR::IREmitter& ir, IR::Inst& inst) {
 
     const IR::U128 t = ir.VectorExtract(x, y, 32);
 
+    std::array<IR::U32, 4> elements;
+    for (size_t i = 0; i < 4; i++) {
+        elements[i] = ir.VectorGetElement(32, t, i);
+    }
+
     IR::U128 result = ir.ZeroVector();
     for (size_t i = 0; i < 4; i++) {
-        const IR::U32 modified_element = [&] {
-            const IR::U32 element = ir.VectorGetElement(32, t, i);
-            const IR::U32 tmp1 = ir.RotateRight(element, ir.Imm8(7));
-            const IR::U32 tmp2 = ir.RotateRight(element, ir.Imm8(18));
-            const IR::U32 tmp3 = ir.LogicalShiftRight(element, ir.Imm8(3));
+        const IR::U32 element = elements[i];
+        const IR::U32 tmp1 = ir.RotateRight(element, ir.Imm8(7));
+        const IR::U32 tmp2 = ir.RotateRight(element, ir.Imm8(18));
+        const IR::U32 tmp3 = ir.LogicalShiftRight(element, ir.Imm8(3));
 
-            return ir.Eor(tmp1, ir.Eor(tmp2, tmp3));
-        }();
+        const IR::U32 modified_element = ir.Eor(tmp1, ir.Eor(tmp2, tmp3));
 
         result = ir.VectorSetElement(32, result, i, modified_element);
     }
@@ -44,29 +47,18 @@ void PolyfillSHA256MessageSchedule1(IR::IREmitter& ir, IR::Inst& inst) {
 
     const IR::U128 T0 = ir.VectorExtract(y, z, 32);
 
-    const IR::U128 lower_half = [&] {
-        const IR::U128 T = ir.VectorRotateWholeVectorRight(z, 64);
-        const IR::U128 tmp1 = ir.VectorRotateRight(32, T, 17);
-        const IR::U128 tmp2 = ir.VectorRotateRight(32, T, 19);
-        const IR::U128 tmp3 = ir.VectorLogicalShiftRight(32, T, 10);
-        const IR::U128 tmp4 = ir.VectorEor(tmp1, ir.VectorEor(tmp2, tmp3));
-        const IR::U128 tmp5 = ir.VectorAdd(32, tmp4, ir.VectorAdd(32, x, T0));
-        return ir.VectorZeroUpper(tmp5);
-    }();
+    const IR::U128 T = ir.VectorRotateWholeVectorRight(z, 64);
+    const IR::U128 tmp1 = ir.VectorRotateRight(32, T, 17);
+    const IR::U128 tmp2 = ir.VectorRotateRight(32, T, 19);
+    const IR::U128 tmp3 = ir.VectorLogicalShiftRight(32, T, 10);
+    const IR::U128 tmp4 = ir.VectorEor(tmp1, ir.VectorEor(tmp2, tmp3));
+    const IR::U128 tmp5 = ir.VectorAdd(32, tmp4, ir.VectorAdd(32, x, T0));
+    const IR::U128 lower_half = ir.VectorZeroUpper(tmp5);
 
-    const IR::U64 upper_half = [&] {
-        const IR::U128 tmp1 = ir.VectorRotateRight(32, lower_half, 17);
-        const IR::U128 tmp2 = ir.VectorRotateRight(32, lower_half, 19);
-        const IR::U128 tmp3 = ir.VectorLogicalShiftRight(32, lower_half, 10);
-        const IR::U128 tmp4 = ir.VectorEor(tmp1, ir.VectorEor(tmp2, tmp3));
-
-        // Shuffle the top two 32-bit elements downwards [3, 2, 1, 0] -> [1, 0, 3, 2]
-        const IR::U128 shuffled_d = ir.VectorRotateWholeVectorRight(x, 64);
-        const IR::U128 shuffled_T0 = ir.VectorRotateWholeVectorRight(T0, 64);
-
-        const IR::U128 tmp5 = ir.VectorAdd(32, tmp4, ir.VectorAdd(32, shuffled_d, shuffled_T0));
-        return ir.VectorGetElement(64, tmp5, 0);
-    }();
+    const IR::U128 shuffled_d = ir.VectorRotateWholeVectorRight(x, 64);
+    const IR::U128 shuffled_T0 = ir.VectorRotateWholeVectorRight(T0, 64);
+    const IR::U128 tmp6 = ir.VectorAdd(32, tmp4, ir.VectorAdd(32, shuffled_d, shuffled_T0));
+    const IR::U64 upper_half = ir.VectorGetElement(64, tmp6, 0);
 
     const IR::U128 result = ir.VectorSetElement(64, lower_half, 1, upper_half);
 
@@ -161,56 +153,47 @@ void PolyfillPass(IR::Block& block, const PolyfillOptions& polyfill) {
     IR::IREmitter ir{block};
 
     for (auto& inst : block) {
-        ir.SetInsertionPointBefore(&inst);
+        const auto opcode = inst.GetOpcode();
 
-        switch (inst.GetOpcode()) {
-        case IR::Opcode::SHA256MessageSchedule0:
-            if (polyfill.sha256) {
+        if (polyfill.sha256 && (opcode == IR::Opcode::SHA256MessageSchedule0 || opcode == IR::Opcode::SHA256MessageSchedule1 || opcode == IR::Opcode::SHA256Hash)) {
+            ir.SetInsertionPointBefore(&inst);
+            switch (opcode) {
+            case IR::Opcode::SHA256MessageSchedule0:
                 PolyfillSHA256MessageSchedule0(ir, inst);
-            }
-            break;
-        case IR::Opcode::SHA256MessageSchedule1:
-            if (polyfill.sha256) {
+                break;
+            case IR::Opcode::SHA256MessageSchedule1:
                 PolyfillSHA256MessageSchedule1(ir, inst);
-            }
-            break;
-        case IR::Opcode::SHA256Hash:
-            if (polyfill.sha256) {
+                break;
+            case IR::Opcode::SHA256Hash:
                 PolyfillSHA256Hash(ir, inst);
+                break;
+            default:
+                break;
             }
-            break;
-        case IR::Opcode::VectorMultiplySignedWiden8:
-            if (polyfill.vector_multiply_widen) {
+        } else if (polyfill.vector_multiply_widen && (opcode == IR::Opcode::VectorMultiplySignedWiden8 || opcode == IR::Opcode::VectorMultiplySignedWiden16 || opcode == IR::Opcode::VectorMultiplySignedWiden32 || opcode == IR::Opcode::VectorMultiplyUnsignedWiden8 || opcode == IR::Opcode::VectorMultiplyUnsignedWiden16 || opcode == IR::Opcode::VectorMultiplyUnsignedWiden32)) {
+            ir.SetInsertionPointBefore(&inst);
+            switch (opcode) {
+            case IR::Opcode::VectorMultiplySignedWiden8:
                 PolyfillVectorMultiplyWiden<8, true>(ir, inst);
-            }
-            break;
-        case IR::Opcode::VectorMultiplySignedWiden16:
-            if (polyfill.vector_multiply_widen) {
+                break;
+            case IR::Opcode::VectorMultiplySignedWiden16:
                 PolyfillVectorMultiplyWiden<16, true>(ir, inst);
-            }
-            break;
-        case IR::Opcode::VectorMultiplySignedWiden32:
-            if (polyfill.vector_multiply_widen) {
+                break;
+            case IR::Opcode::VectorMultiplySignedWiden32:
                 PolyfillVectorMultiplyWiden<32, true>(ir, inst);
-            }
-            break;
-        case IR::Opcode::VectorMultiplyUnsignedWiden8:
-            if (polyfill.vector_multiply_widen) {
+                break;
+            case IR::Opcode::VectorMultiplyUnsignedWiden8:
                 PolyfillVectorMultiplyWiden<8, false>(ir, inst);
-            }
-            break;
-        case IR::Opcode::VectorMultiplyUnsignedWiden16:
-            if (polyfill.vector_multiply_widen) {
+                break;
+            case IR::Opcode::VectorMultiplyUnsignedWiden16:
                 PolyfillVectorMultiplyWiden<16, false>(ir, inst);
-            }
-            break;
-        case IR::Opcode::VectorMultiplyUnsignedWiden32:
-            if (polyfill.vector_multiply_widen) {
+                break;
+            case IR::Opcode::VectorMultiplyUnsignedWiden32:
                 PolyfillVectorMultiplyWiden<32, false>(ir, inst);
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
     }
 }

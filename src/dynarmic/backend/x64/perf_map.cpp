@@ -10,9 +10,9 @@
 
 #ifdef __linux__
 
+#    include <atomic>
 #    include <cstdio>
 #    include <cstdlib>
-#    include <mutex>
 
 #    include <fmt/format.h>
 #    include <mcl/stdint.hpp>
@@ -22,7 +22,7 @@
 namespace Dynarmic::Backend::X64 {
 
 namespace {
-std::mutex mutex;
+std::atomic<bool> lock = false;
 std::FILE* file = nullptr;
 
 void OpenFile() {
@@ -42,6 +42,15 @@ void OpenFile() {
 
     std::setvbuf(file, nullptr, _IONBF, 0);
 }
+
+bool TryLock() {
+    bool expected = false;
+    return lock.compare_exchange_strong(expected, true);
+}
+
+void Unlock() {
+    lock.store(false, std::memory_order_release);
+}
 }  // anonymous namespace
 
 namespace detail {
@@ -51,8 +60,6 @@ void PerfMapRegister(const void* start, const void* end, std::string_view friend
         return;
     }
 
-    std::lock_guard guard{mutex};
-
     if (!file) {
         OpenFile();
         if (!file) {
@@ -60,21 +67,32 @@ void PerfMapRegister(const void* start, const void* end, std::string_view friend
         }
     }
 
+    while (!TryLock()) {
+        // Spin
+    }
+
     const std::string line = fmt::format("{:016x} {:016x} {:s}\n", reinterpret_cast<u64>(start), reinterpret_cast<u64>(end) - reinterpret_cast<u64>(start), friendly_name);
     std::fwrite(line.data(), sizeof *line.data(), line.size(), file);
+
+    Unlock();
 }
 }  // namespace detail
 
 void PerfMapClear() {
-    std::lock_guard guard{mutex};
+    while (!TryLock()) {
+        // Spin
+    }
 
     if (!file) {
+        Unlock();
         return;
     }
 
     std::fclose(file);
     file = nullptr;
     OpenFile();
+
+    Unlock();
 }
 
 }  // namespace Dynarmic::Backend::X64

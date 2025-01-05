@@ -1,0 +1,18 @@
+math_util.cpp:
+precalculate the Lookup Tables (LUTs) at compile time using constexpr and std::array
+
+memory_pool.cpp and .h:
+std::vector for slabs
+remove std::vector<char*> empty_slabs;
+
+spin_lock_arm64.cpp and spin_lock_x64.cpp:
+ I’ve moved the initialization of the SpinLockImpl to its constructor. 
+ This means that the spin lock is initialized when the SpinLockImpl object is created, 
+ rather than the first time Lock or Unlock is called. 
+ This removes the need for std::call_once and the flag variable
+
+x64_disassemble.cpp:
+ I’ve moved the initialization of the ZydisDecoder and ZydisFormatter to 
+ a separate Initialize function. You should call this function once before 
+ calling DumpDisassembledX64 or DisassembleX64. 
+ I’ve also added a call to std::vector::reserve in DisassembleX64.

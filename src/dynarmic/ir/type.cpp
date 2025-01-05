@@ -6,41 +6,30 @@
 #include "dynarmic/ir/type.h"
 
 #include <array>
-#include <ostream>
 #include <string>
 
 namespace Dynarmic::IR {
 
 std::string GetNameOf(Type type) {
-    static constexpr std::array names{
-        "A32Reg", "A32ExtReg",
-        "A64Reg", "A64Vec",
-        "Opaque",
-        "U1", "U8", "U16", "U32", "U64", "U128",
-        "CoprocInfo",
-        "NZCVFlags",
-        "Cond",
-        "Table"};
-
-    const size_t bits = static_cast<size_t>(type);
-    if (bits == 0) {
-        return "Void";
-    }
+    static constexpr const char* type_names[32] = {
+        "Void", "A32Reg", "A32ExtReg", "A64Reg", "A64Vec", "Opaque",
+        "U1", "U8", "U16", "U32", "U64", "U128", "CoprocInfo", "NZCV", "Cond", "Table", "AccType"};
+    static constexpr size_t type_name_count = sizeof(type_names) / sizeof(type_names[0]);
 
     std::string result;
-    for (size_t i = 0; i < names.size(); i++) {
-        if ((bits & (size_t(1) << i)) != 0) {
+    for (size_t i = 0; i < type_name_count; i++) {
+        if (static_cast<size_t>(type) & (size_t(1) << i)) {
             if (!result.empty()) {
                 result += '|';
             }
-            result += names[i];
+            result += type_names[i];
         }
     }
-    return result;
-}
 
-bool AreTypesCompatible(Type t1, Type t2) {
-    return t1 == t2 || t1 == Type::Opaque || t2 == Type::Opaque;
+    if (result.empty()) {
+        return type_names[0];  // "Void"
+    }
+    return result;
 }
 
 }  // namespace Dynarmic::IR

@@ -5,11 +5,10 @@
 
 #pragma once
 
+#include <format>
 #include <functional>
 #include <string>
-#include <tuple>
 
-#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 #include "dynarmic/frontend/A32/FPSCR.h"
@@ -57,7 +56,10 @@ public:
     bool SingleStepping() const { return single_stepping; }
 
     bool operator==(const LocationDescriptor& o) const {
-        return std::tie(arm_pc, cpsr, fpscr, single_stepping) == std::tie(o.arm_pc, o.cpsr, o.fpscr, o.single_stepping);
+        return arm_pc == o.arm_pc
+            && cpsr == o.cpsr
+            && fpscr == o.fpscr
+            && single_stepping == o.single_stepping;
     }
 
     bool operator!=(const LocationDescriptor& o) const {
@@ -151,12 +153,12 @@ struct hash<Dynarmic::A32::LocationDescriptor> {
         return std::hash<u64>()(x.UniqueHash());
     }
 };
-}  // namespace std
 
 template<>
-struct fmt::formatter<Dynarmic::A32::LocationDescriptor> : fmt::formatter<std::string> {
+struct formatter<Dynarmic::A32::LocationDescriptor> : formatter<std::string> {
     template<typename FormatContext>
-    auto format(Dynarmic::A32::LocationDescriptor descriptor, FormatContext& ctx) const {
+    auto format(const Dynarmic::A32::LocationDescriptor& descriptor, FormatContext& ctx) {
         return formatter<std::string>::format(Dynarmic::A32::ToString(descriptor), ctx);
     }
 };
+}  // namespace std

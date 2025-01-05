@@ -34,10 +34,15 @@ void A64GetSetElimination(IR::Block& block) {
         bool set_instruction_present = false;
         Iterator last_set_instruction;
     };
-    std::array<RegisterInfo, 31> reg_info;
-    std::array<RegisterInfo, 32> vec_info;
-    RegisterInfo sp_info;
-    RegisterInfo nzcv_info;
+
+    const int REG_INFO_SIZE = 31;
+    const int VEC_INFO_SIZE = 32;
+
+    // Initialize the arrays with default values
+    RegisterInfo reg_info[REG_INFO_SIZE] = {};
+    RegisterInfo vec_info[VEC_INFO_SIZE] = {};
+    RegisterInfo sp_info = {};
+    RegisterInfo nzcv_info = {};
 
     const auto do_set = [&block](RegisterInfo& info, IR::Value value, Iterator set_inst, TrackingType tracking_type) {
         if (info.set_instruction_present) {
@@ -51,15 +56,13 @@ void A64GetSetElimination(IR::Block& block) {
         info.last_set_instruction = set_inst;
     };
 
-    const auto do_get = [](RegisterInfo& info, Iterator get_inst, TrackingType tracking_type) {
-        const auto do_nothing = [&] {
-            info = {};
-            info.register_value = IR::Value(&*get_inst);
-            info.tracking_type = tracking_type;
-        };
+    const auto do_get = [&](RegisterInfo& info, Iterator get_inst, TrackingType tracking_type) {
+        info.register_value = IR::Value(&*get_inst);
+        info.tracking_type = tracking_type;
+        info.set_instruction_present = true;
+        info.last_set_instruction = get_inst;
 
         if (info.register_value.IsEmpty()) {
-            do_nothing();
             return;
         }
 
@@ -67,35 +70,33 @@ void A64GetSetElimination(IR::Block& block) {
             get_inst->ReplaceUsesWith(info.register_value);
             return;
         }
-
-        do_nothing();
     };
 
     for (auto inst = block.begin(); inst != block.end(); ++inst) {
         switch (inst->GetOpcode()) {
         case IR::Opcode::A64GetW: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
-            do_get(reg_info.at(index), inst, TrackingType::W);
+            do_get(reg_info[index], inst, TrackingType::W);
             break;
         }
         case IR::Opcode::A64GetX: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
-            do_get(reg_info.at(index), inst, TrackingType::X);
+            do_get(reg_info[index], inst, TrackingType::X);
             break;
         }
         case IR::Opcode::A64GetS: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_get(vec_info.at(index), inst, TrackingType::S);
+            do_get(vec_info[index], inst, TrackingType::S);
             break;
         }
         case IR::Opcode::A64GetD: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_get(vec_info.at(index), inst, TrackingType::D);
+            do_get(vec_info[index], inst, TrackingType::D);
             break;
         }
         case IR::Opcode::A64GetQ: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_get(vec_info.at(index), inst, TrackingType::Q);
+            do_get(vec_info[index], inst, TrackingType::Q);
             break;
         }
         case IR::Opcode::A64GetSP: {
@@ -108,27 +109,27 @@ void A64GetSetElimination(IR::Block& block) {
         }
         case IR::Opcode::A64SetW: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
-            do_set(reg_info.at(index), inst->GetArg(1), inst, TrackingType::W);
+            do_set(reg_info[index], inst->GetArg(1), inst, TrackingType::W);
             break;
         }
         case IR::Opcode::A64SetX: {
             const size_t index = A64::RegNumber(inst->GetArg(0).GetA64RegRef());
-            do_set(reg_info.at(index), inst->GetArg(1), inst, TrackingType::X);
+            do_set(reg_info[index], inst->GetArg(1), inst, TrackingType::X);
             break;
         }
         case IR::Opcode::A64SetS: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_set(vec_info.at(index), inst->GetArg(1), inst, TrackingType::S);
+            do_set(vec_info[index], inst->GetArg(1), inst, TrackingType::S);
             break;
         }
         case IR::Opcode::A64SetD: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_set(vec_info.at(index), inst->GetArg(1), inst, TrackingType::D);
+            do_set(vec_info[index], inst->GetArg(1), inst, TrackingType::D);
             break;
         }
         case IR::Opcode::A64SetQ: {
             const size_t index = A64::VecNumber(inst->GetArg(0).GetA64VecRef());
-            do_set(vec_info.at(index), inst->GetArg(1), inst, TrackingType::Q);
+            do_set(vec_info[index], inst->GetArg(1), inst, TrackingType::Q);
             break;
         }
         case IR::Opcode::A64SetSP: {
@@ -148,9 +149,15 @@ void A64GetSetElimination(IR::Block& block) {
                 nzcv_info = {};
             }
             if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
-                reg_info = {};
-                vec_info = {};
+                // Reset the arrays
+                for (size_t i = 0; i < REG_INFO_SIZE; i++) {
+                    reg_info[i] = {};
+                }
+                for (size_t i = 0; i < VEC_INFO_SIZE; i++) {
+                    vec_info[i] = {};
+                }
                 sp_info = {};
+                nzcv_info = {};
             }
             break;
         }

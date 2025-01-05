@@ -8,6 +8,7 @@
 #include <array>
 #include <functional>
 #include <optional>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -46,7 +47,7 @@ public:
     bool ContainsValue(const IR::Inst* inst) const;
     size_t GetMaxBitWidth() const;
 
-    void AddValue(IR::Inst* inst);
+    void AddValue(const IR::Inst* inst);
 
     void EmitVerboseDebuggingOutput(BlockOfCode& code, size_t host_loc_index) const;
 
@@ -62,7 +63,7 @@ private:
     size_t total_uses = 0;
 
     // Value state
-    std::vector<IR::Inst*> values;
+    std::set<const IR::Inst*> values;
     size_t max_bit_width = 0;
 };
 
