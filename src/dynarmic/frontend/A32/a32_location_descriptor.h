@@ -154,6 +154,19 @@ struct hash<Dynarmic::A32::LocationDescriptor> {
 };
 
 template<>
+struct std::formatter<std::string> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    auto format(const std::string& str, FormatContext& ctx) {
+        return std::format_to(ctx.out(), "{}", str);
+    }
+};
+
+template<>
 struct formatter<Dynarmic::A32::LocationDescriptor> : formatter<std::string> {
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
