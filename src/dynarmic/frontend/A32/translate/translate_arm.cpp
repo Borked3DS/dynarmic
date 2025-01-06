@@ -19,7 +19,7 @@
 
 namespace Dynarmic::A32 {
 
-const u32 INSTRUCTION_SIZE = 4;
+const size_t INSTRUCTION_SIZE = 4;
 
 bool TranslateInstruction(TranslatorVisitor& visitor, u32 arm_instruction) {
     if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(arm_instruction)) {
