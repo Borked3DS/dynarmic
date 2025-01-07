@@ -6,9 +6,10 @@
 #include "dynarmic/frontend/A32/a32_types.h"
 
 #include <array>
-#include "custom_ostream.h"
 
 #include <mcl/bit/bit_field.hpp>
+
+#include "custom_ostream.h"
 
 namespace Dynarmic::A32 {
 

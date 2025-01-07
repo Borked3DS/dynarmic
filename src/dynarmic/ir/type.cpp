@@ -20,8 +20,7 @@ static constexpr const char* type_names[] = {
     "CoprocInfo",
     "NZCVFlags",
     "Cond",
-    "Table"
-};
+    "Table"};
 
 static constexpr size_t type_name_count = std::size(type_names);
 

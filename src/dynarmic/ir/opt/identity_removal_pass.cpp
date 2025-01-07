@@ -40,5 +40,3 @@ void IdentityRemovalPass(IR::Block& block) {
 }
 
 }  // namespace Dynarmic::Optimization
-
-

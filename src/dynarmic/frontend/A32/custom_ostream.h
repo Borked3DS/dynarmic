@@ -28,7 +28,7 @@ public:
     using OutputFunction = void (*)(const char*, size_t);
 
     ostream(OutputFunction output_function)
-        : output_function(output_function) {}
+            : output_function(output_function) {}
 
     ostream& operator<<(const char* str) {
         output_function(str, strlen(str));
@@ -44,6 +44,6 @@ private:
     OutputFunction output_function;
 };
 
-} // namespace Dynarmic::A32
+}  // namespace Dynarmic::A32
 
-#endif // CUSTOM_OSTREAM_H
+#endif  // CUSTOM_OSTREAM_H

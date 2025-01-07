@@ -77,4 +77,3 @@ void SpinLock::Unlock() {
 }
 
 }  // namespace Dynarmic
-
