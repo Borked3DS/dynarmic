@@ -10,19 +10,6 @@
 
 namespace Dynarmic::IR {
 
-static constexpr const char* type_names[] = {
-    "Void",
-    "A32Reg", "A32ExtReg",
-    "A64Reg", "A64Vec",
-    "Opaque",
-    "U1", "U8", "U16", "U32", "U64", "U128",
-    "CoprocInfo",
-    "NZCVFlags",
-    "Cond",
-    "Table"};
-
-static constexpr size_t type_name_count = std::size(type_names);
-
 std::string GetNameOf(Type type) {
     static constexpr const char* type_names[32] = {
         "Void", "A32Reg", "A32ExtReg", "A64Reg", "A64Vec", "Opaque",
@@ -44,4 +31,5 @@ std::string GetNameOf(Type type) {
     }
     return result;
 }
+
 }  // namespace Dynarmic::IR
