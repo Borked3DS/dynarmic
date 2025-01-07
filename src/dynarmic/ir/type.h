@@ -52,7 +52,7 @@ inline bool AreTypesCompatible(Type t1, Type t2) {
 
 }  // namespace Dynarmic::IR
 
-}
+}  // namespace Dynarmic::IR
 template<>
 struct fmt::formatter<Dynarmic::IR::Type> : fmt::formatter<std::string> {
     template<typename FormatContext>
