@@ -19,6 +19,20 @@
 
 namespace Dynarmic::A32 {
 
+const u32 INSTRUCTION_SIZE = 4;
+
+bool TranslateInstruction(TranslatorVisitor& visitor, u32 arm_instruction) {
+    if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(arm_instruction)) {
+        return vfp_decoder->get().call(visitor, arm_instruction);
+    } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(arm_instruction)) {
+        return asimd_decoder->get().call(visitor, arm_instruction);
+    } else if (const auto decoder = DecodeArm<TranslatorVisitor>(arm_instruction)) {
+        return decoder->get().call(visitor, arm_instruction);
+    } else {
+        return visitor.arm_UDF();
+    }
+}
+
 IR::Block TranslateArm(LocationDescriptor descriptor, TranslateCallbacks* tcb, const TranslationOptions& options) {
     const bool single_step = descriptor.SingleStepping();
 
@@ -35,24 +49,14 @@ IR::Block TranslateArm(LocationDescriptor descriptor, TranslateCallbacks* tcb, c
             break;
         }
 
-        if (const auto arm_instruction = tcb->MemoryReadCode(arm_pc)) {
-            visitor.current_instruction_size = 4;
+        visitor.current_instruction_size = INSTRUCTION_SIZE;
 
+        if (const auto arm_instruction = tcb->MemoryReadCode(arm_pc)) {
             tcb->PreCodeTranslationHook(false, arm_pc, visitor.ir);
             ticks_for_instruction = tcb->GetTicksForCode(false, arm_pc, *arm_instruction);
 
-            if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(*arm_instruction)) {
-                should_continue = vfp_decoder->get().call(visitor, *arm_instruction);
-            } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(*arm_instruction)) {
-                should_continue = asimd_decoder->get().call(visitor, *arm_instruction);
-            } else if (const auto decoder = DecodeArm<TranslatorVisitor>(*arm_instruction)) {
-                should_continue = decoder->get().call(visitor, *arm_instruction);
-            } else {
-                should_continue = visitor.arm_UDF();
-            }
+            should_continue = TranslateInstruction(visitor, *arm_instruction);
         } else {
-            visitor.current_instruction_size = 4;
-
             should_continue = visitor.RaiseException(Exception::NoExecuteFault);
         }
 
@@ -60,7 +64,7 @@ IR::Block TranslateArm(LocationDescriptor descriptor, TranslateCallbacks* tcb, c
             break;
         }
 
-        visitor.ir.current_location = visitor.ir.current_location.AdvancePC(4);
+        visitor.ir.current_location = visitor.ir.current_location.AdvancePC(INSTRUCTION_SIZE);
         block.CycleCount() += ticks_for_instruction;
     } while (should_continue && CondCanContinue(visitor.cond_state, visitor.ir) && !single_step);
 
@@ -88,23 +92,15 @@ bool TranslateSingleArmInstruction(IR::Block& block, LocationDescriptor descript
 
     // TODO: Proper cond handling
 
-    visitor.current_instruction_size = 4;
+    visitor.current_instruction_size = INSTRUCTION_SIZE;
 
     const u64 ticks_for_instruction = 1;
 
-    if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(arm_instruction)) {
-        should_continue = vfp_decoder->get().call(visitor, arm_instruction);
-    } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(arm_instruction)) {
-        should_continue = asimd_decoder->get().call(visitor, arm_instruction);
-    } else if (const auto decoder = DecodeArm<TranslatorVisitor>(arm_instruction)) {
-        should_continue = decoder->get().call(visitor, arm_instruction);
-    } else {
-        should_continue = visitor.arm_UDF();
-    }
+    should_continue = TranslateInstruction(visitor, arm_instruction);
 
     // TODO: Feedback resulting cond status to caller somehow.
 
-    visitor.ir.current_location = visitor.ir.current_location.AdvancePC(4);
+    visitor.ir.current_location = visitor.ir.current_location.AdvancePC(INSTRUCTION_SIZE);
     block.CycleCount() += ticks_for_instruction;
 
     block.SetEndLocation(visitor.ir.current_location);
