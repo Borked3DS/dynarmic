@@ -15,8 +15,6 @@ Pool::Pool(size_t object_size, size_t initial_pool_size)
 }
 
 Pool::~Pool() {
-    std::free(current_slab);
-
     for (char* slab : slabs) {
         std::free(slab);
     }
@@ -24,7 +22,6 @@ Pool::~Pool() {
 
 void* Pool::Alloc() {
     if (remaining == 0) {
-        slabs.push_back(current_slab);
         AllocateNewSlab();
     }
 
@@ -39,6 +36,7 @@ void Pool::AllocateNewSlab() {
     current_slab = static_cast<char*>(std::malloc(object_size * slab_size));
     current_ptr = current_slab;
     remaining = slab_size;
+    slabs.push_back(current_slab);
 }
 
 }  // namespace Dynarmic::Common
