@@ -31,13 +31,6 @@ bool IsConditionPassed(TranslatorVisitor& v, IR::Cond cond) {
     ASSERT_MSG(v.cond_state != ConditionalState::Break,
                "This should never happen. We requested a break but that wasn't honored.");
 
-    if (cond == IR::Cond::NV) {
-        // NV conditional is obsolete
-        v.cond_state = ConditionalState::Break;
-        v.RaiseException(Exception::UnpredictableInstruction);
-        return false;
-    }
-
     if (v.cond_state == ConditionalState::Translating) {
         if (v.ir.block.ConditionFailedLocation() != v.ir.current_location || cond == IR::Cond::AL) {
             v.cond_state = ConditionalState::Trailing;
