@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <optional>
-
 #include <mcl/bit/bit_field.hpp>
 #include <mcl/stdint.hpp>
 
@@ -78,14 +76,31 @@ public:
     }
 
     /// Indicates the stride of a vector.
-    std::optional<size_t> Stride() const {
+    struct StrideInfo {
+        bool has_valid_stride;
+        size_t stride;
+
+        explicit operator bool() const {
+            return has_valid_stride;
+        }
+
+        bool operator!=(size_t other) const {
+            return !has_valid_stride || stride != other;
+        }
+
+        size_t value_or(size_t default_value) const {
+            return has_valid_stride ? stride : default_value;
+        }
+    };
+
+    StrideInfo Stride() const {
         switch (mcl::bit::get_bits<20, 21>(value)) {
         case 0b00:
-            return 1;
+            return {true, 1};
         case 0b11:
-            return 2;
+            return {true, 2};
         default:
-            return std::nullopt;
+            return {false, 0};
         }
     }
 
