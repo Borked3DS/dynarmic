@@ -48,7 +48,7 @@ void ABI_PushRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const
 
     FrameInfo frame_info = CalculateFrameInfo(num_gprs, num_xmms, frame_size);
 
-    for (HostLoc gpr : regs) {
+    for (const HostLoc& gpr : regs) {
         if (HostLocIsGPR(gpr)) {
             code.push(HostLocToReg64(gpr));
         }
@@ -59,7 +59,7 @@ void ABI_PushRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const
     }
 
     size_t xmm_offset = frame_info.xmm_offset;
-    for (HostLoc xmm : regs) {
+    for (const HostLoc& xmm : regs) {
         if (HostLocIsXMM(xmm)) {
             if (code.HasHostFeature(HostFeature::AVX)) {
                 code.vmovaps(code.xword[rsp + xmm_offset], HostLocToXmm(xmm));
