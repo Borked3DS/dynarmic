@@ -21,6 +21,16 @@ if (MASTER_PROJECT)
     include(CTest)
 endif()
 
+# Enable link time optimization if supported by compiler
+include(CheckIPOSupported)
+check_ipo_supported(RESULT result)
+if(result)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+# Set position independent code
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Dynarmic project options
 option(DYNARMIC_ENABLE_CPU_FEATURE_DETECTION "Turning this off causes dynarmic to assume the host CPU doesn't support anything later than SSE3" ON)
 option(DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT "Enables support for systems that require W^X" OFF)
