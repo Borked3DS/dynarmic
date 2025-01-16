@@ -9,7 +9,9 @@
 
 namespace Dynarmic::IR {
 std::string ToString(const LocationDescriptor& descriptor) {
-    char buffer[18];  // 16 hex digits + { } + null terminator
+    static constexpr size_t kHexDigits = 16;
+    static constexpr size_t kBufferSize = kHexDigits + 2 + 1;  // hex digits + braces + null terminator
+    char buffer[kBufferSize];
     char* ptr = buffer;
     *ptr++ = '{';
 
