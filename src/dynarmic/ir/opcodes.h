@@ -10,6 +10,8 @@
 #include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
+#include "dynarmic/common/rotation_functions.h"
+
 namespace Dynarmic::IR {
 
 enum class Type;
