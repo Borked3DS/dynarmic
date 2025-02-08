@@ -160,7 +160,7 @@ if (DYNARMIC_USE_BUNDLED_EXTERNALS)
 endif()
 
 find_package(Boost 1.57 REQUIRED)
-find_package(fmt 10 CONFIG)
+find_package(fmt 11 CONFIG)
 find_package(mcl 0.1.13 EXACT CONFIG)
 find_package(tsl-robin-map CONFIG)
 
