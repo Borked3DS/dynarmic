@@ -156,6 +156,30 @@ private:
     std::vector<HostLoc> gpr_order;
     std::vector<HostLoc> xmm_order;
 
+    bool IsInvalidRegisterCombination(HostLoc loc) const {
+        if (!HostLocIsGPR(loc)) {
+            return false;
+        }
+
+        const Xbyak::Reg64 reg = HostLocToReg64(loc);
+        if (reg.getIdx() < 4 && reg.isHigh8bit()) {  // AH, BH, CH, DH
+            // Check if any allocated register is an extended register or has index >= 8
+            for (size_t i = 0; i < hostloc_info.size(); i++) {
+                if (!hostloc_info[i].IsEmpty()) {
+                    const auto other_loc = static_cast<HostLoc>(i);
+                    if (!HostLocIsGPR(other_loc))
+                        continue;
+
+                    const Xbyak::Reg64 other = HostLocToReg64(other_loc);
+                    if (other.isExt8bit() || other.getIdx() >= 8) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     HostLoc SelectARegister(const std::vector<HostLoc>& desired_locations) const;
     std::optional<HostLoc> ValueLocation(const IR::Inst* value) const;
 

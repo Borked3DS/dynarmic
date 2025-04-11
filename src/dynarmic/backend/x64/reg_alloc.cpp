@@ -373,6 +373,11 @@ HostLoc RegAlloc::UseImpl(IR::Value use_value, const std::vector<HostLoc>& desir
     const HostLoc current_location = *ValueLocation(use_inst);
     const size_t max_bit_width = LocInfo(current_location).GetMaxBitWidth();
 
+    // Check if current location creates invalid register combination
+    if (IsInvalidRegisterCombination(current_location)) {
+        return UseScratchImpl(use_value, desired_locations);
+    }
+
     const bool can_use_current_location = std::find(desired_locations.begin(), desired_locations.end(), current_location) != desired_locations.end();
     if (can_use_current_location) {
         LocInfo(current_location).ReadLock();
@@ -383,7 +388,15 @@ HostLoc RegAlloc::UseImpl(IR::Value use_value, const std::vector<HostLoc>& desir
         return UseScratchImpl(use_value, desired_locations);
     }
 
-    const HostLoc destination_location = SelectARegister(desired_locations);
+    // Find a destination location that doesn't create invalid combinations
+    HostLoc destination_location = desired_locations.front();
+    for (HostLoc loc : desired_locations) {
+        if (!IsInvalidRegisterCombination(loc)) {
+            destination_location = loc;
+            break;
+        }
+    }
+
     if (max_bit_width > HostLocBitWidth(destination_location)) {
         return UseScratchImpl(use_value, desired_locations);
     } else if (CanExchange(destination_location, current_location)) {
@@ -405,7 +418,16 @@ HostLoc RegAlloc::UseScratchImpl(IR::Value use_value, const std::vector<HostLoc>
     const HostLoc current_location = *ValueLocation(use_inst);
     const size_t bit_width = GetBitWidth(use_inst->GetType());
 
-    const bool can_use_current_location = std::find(desired_locations.begin(), desired_locations.end(), current_location) != desired_locations.end();
+    // Find a valid destination location that doesn't create invalid combinations
+    HostLoc destination_location = desired_locations.front();
+    for (HostLoc loc : desired_locations) {
+        if (!IsInvalidRegisterCombination(loc)) {
+            destination_location = loc;
+            break;
+        }
+    }
+
+    const bool can_use_current_location = destination_location == current_location;
     if (can_use_current_location && !LocInfo(current_location).IsLocked()) {
         if (!LocInfo(current_location).IsLastUse()) {
             MoveOutOfTheWay(current_location);
@@ -416,7 +438,6 @@ HostLoc RegAlloc::UseScratchImpl(IR::Value use_value, const std::vector<HostLoc>
         return current_location;
     }
 
-    const HostLoc destination_location = SelectARegister(desired_locations);
     MoveOutOfTheWay(destination_location);
     CopyToScratch(bit_width, destination_location, current_location);
     LocInfo(destination_location).WriteLock();
