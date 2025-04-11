@@ -550,9 +550,19 @@ HostLoc RegAlloc::SelectARegister(const std::vector<HostLoc>& desired_locations)
     candidates.erase(allocated_locs, candidates.end());
     ASSERT_MSG(!candidates.empty(), "All candidate registers have already been allocated");
 
-    // Selects the best location out of the available locations.
-    // TODO: Actually do LRU or something. Currently we just try to pick something without a value if possible.
+    // Next remove any high byte registers (AH, BH, CH, DH) when there are other registers available
+    if (candidates.size() > 1) {
+        const auto high_byte_locs = std::partition(candidates.begin(), candidates.end(), [](auto loc) {
+            if (!HostLocIsGPR(loc)) return true;
+            const Xbyak::Reg64 reg = HostLocToReg64(loc);
+            return !(reg.getIdx() < 4 && reg.isHigh8bit());
+        });
+        if (candidates.begin() != high_byte_locs) {
+            candidates.erase(high_byte_locs, candidates.end());
+        }
+    }
 
+    // Prefer empty locations when available
     std::partition(candidates.begin(), candidates.end(), [this](auto loc) {
         return this->LocInfo(loc).IsEmpty();
     });
