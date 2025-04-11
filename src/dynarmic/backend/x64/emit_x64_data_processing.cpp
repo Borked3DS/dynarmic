@@ -64,28 +64,32 @@ void EmitX64::EmitMostSignificantWord(EmitContext& ctx, IR::Inst* inst) {
     const auto carry_inst = inst->GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp);
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    if (args[0].IsImmediate()) {
+        // Handle immediate case
+        const u32 immediate = static_cast<u32>(args[0].GetImmediateU64() >> 32);
+        const Xbyak::Reg64 result = ctx.reg_alloc.ScratchGpr();
+        code.mov(result.cvt32(), immediate);
+        ctx.reg_alloc.DefineValue(inst, result);
+
+        if (carry_inst) {
+            const Xbyak::Reg64 carry = ctx.reg_alloc.ScratchGpr();
+            code.xor_(carry.cvt32(), carry.cvt32());  // Clear carry for immediate
+            ctx.reg_alloc.DefineValue(carry_inst, carry);
+        }
+        return;
+    }
+
+    // Handle register case
     const Xbyak::Reg64 result = ctx.reg_alloc.UseScratchGpr(args[0]);
     code.shr(result, 32);
+    ctx.reg_alloc.DefineValue(inst, result);
 
     if (carry_inst) {
-        // We need to use a non-high 8-bit register for the carry flag
-        HostLoc carry_loc = HostLoc::RAX;
-        // Find a suitable non-high 8-bit register location
-        for (const auto& loc : {HostLoc::RAX, HostLoc::RCX, HostLoc::RDX, HostLoc::RBX,
-                                HostLoc::RSI, HostLoc::RDI, HostLoc::R8, HostLoc::R9,
-                                HostLoc::R10, HostLoc::R11, HostLoc::R12, HostLoc::R13}) {
-            if (!ctx.reg_alloc.LocInfo(loc).IsLocked()) {
-                carry_loc = loc;
-                break;
-            }
-        }
-
-        const Xbyak::Reg64 carry = ctx.reg_alloc.ScratchGpr(carry_loc);
+        const Xbyak::Reg64 carry = ctx.reg_alloc.ScratchGpr();
         code.setc(carry.cvt8());
         ctx.reg_alloc.DefineValue(carry_inst, carry);
     }
-
-    ctx.reg_alloc.DefineValue(inst, result);
 }
 
 void EmitX64::EmitLeastSignificantHalf(EmitContext& ctx, IR::Inst* inst) {
