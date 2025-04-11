@@ -68,7 +68,19 @@ void EmitX64::EmitMostSignificantWord(EmitContext& ctx, IR::Inst* inst) {
     code.shr(result, 32);
 
     if (carry_inst) {
-        const Xbyak::Reg64 carry = ctx.reg_alloc.ScratchGpr();
+        // We need to use a non-high 8-bit register for the carry flag
+        HostLoc carry_loc = HostLoc::RAX;
+        // Find a suitable non-high 8-bit register location
+        for (const auto& loc : {HostLoc::RAX, HostLoc::RCX, HostLoc::RDX, HostLoc::RBX,
+                                HostLoc::RSI, HostLoc::RDI, HostLoc::R8, HostLoc::R9,
+                                HostLoc::R10, HostLoc::R11, HostLoc::R12, HostLoc::R13}) {
+            if (!ctx.reg_alloc.LocInfo(loc).IsLocked()) {
+                carry_loc = loc;
+                break;
+            }
+        }
+
+        const Xbyak::Reg64 carry = ctx.reg_alloc.ScratchGpr(carry_loc);
         code.setc(carry.cvt8());
         ctx.reg_alloc.DefineValue(carry_inst, carry);
     }
