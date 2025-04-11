@@ -133,6 +133,8 @@ public:
     Xbyak::Xmm ScratchXmm();
     Xbyak::Xmm ScratchXmm(HostLoc desired_location);
 
+    HostLocInfo& LocInfo(HostLoc loc);
+
     void HostCall(IR::Inst* result_def = nullptr,
                   std::optional<Argument::copyable_reference> arg0 = {},
                   std::optional<Argument::copyable_reference> arg1 = {},
@@ -199,7 +201,6 @@ private:
     HostLoc FindFreeSpill() const;
 
     std::vector<HostLocInfo> hostloc_info;
-    HostLocInfo& LocInfo(HostLoc loc);
     const HostLocInfo& LocInfo(HostLoc loc) const;
 
     BlockOfCode& code;
